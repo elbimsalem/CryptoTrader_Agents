@@ -1,0 +1,87 @@
+# src/crypto_trader/config/tasks.yaml
+fetch_binance_klines_task:
+  agent: binance_data_analyst
+  description: >
+    As of {current_datetime}, using the "Binance Market Data Tool (via RapidAPI)", fetch historical Kline/Candlestick data.
+    Action: 'get_kline_data'.
+    Parameters:
+      'symbol': '{target_symbol}'
+      'interval': '{kline_interval}'
+      'limit': {kline_limit}
+  expected_output: >
+    A JSON string containing the requested Kline/Candlestick data for {target_symbol}, reflecting data up to the latest available.
+
+fetch_binance_price_ticker_task:
+  agent: binance_data_analyst
+  description: >
+    As of {current_datetime}, using the "Binance Market Data Tool (via RapidAPI)", fetch the current price ticker.
+    Action: 'get_symbol_price_ticker'.
+    Parameters:
+      'symbol': '{target_symbol}'
+  expected_output: >
+    A JSON string containing the current price ticker for {target_symbol} as of {current_datetime}.
+
+fetch_binance_24hr_stats_task:
+  agent: binance_data_analyst
+  description: >
+    As of {current_datetime}, using the "Binance Market Data Tool (via RapidAPI)", fetch the 24-hour price change statistics.
+    Action: 'get_24hr_ticker'.
+    Parameters:
+      'symbol': '{target_symbol}'
+  expected_output: >
+    A JSON string containing the 24-hour price change statistics for {target_symbol} as of {current_datetime}.
+
+research_news_and_sentiment_task:
+  agent: news_and_sentiment_researcher
+  description: >
+    Conduct comprehensive online research for the cryptocurrency '{target_symbol}', considering information available up to {current_datetime}.
+    Focus on recent news (last 3-7 days from {current_datetime}), significant developments, partnerships,
+    and overall market sentiment from reputable sources, forums, and social media.
+    Identify any major upcoming events or catalysts relevant as of {current_datetime}.
+  expected_output: >
+    A concise summary report of qualitative findings for {target_symbol} (relevant up to {current_datetime}), including:
+    - Key recent news items and their potential impact.
+    - Prevailing market sentiment (e.g., bullish, bearish, neutral) with supporting evidence.
+    - Notable online discussions or influencer opinions.
+    - Any identified upcoming catalysts or risk factors.
+    Format as a well-organized text or markdown.
+
+analyze_crypto_data_task:
+  agent: crypto_analyst
+  description: >
+    Analyze the provided market data (klines, current price, 24hr stats) and the qualitative research report
+    (news, sentiment) for '{target_symbol}', all pertinent to the current context of {current_datetime}.
+    Synthesize these inputs to provide a comprehensive analysis. This should include:
+    1. Summary of current market data interpretation (e.g., trend, volatility based on klines & stats).
+    2. Key insights from the qualitative research (news/sentiment impact).
+    3. Correlation between market data and qualitative findings (e.g., did price react to news?).
+    4. Identification of key support and resistance levels based on kline data.
+    5. A brief overall outlook (bullish/bearish/neutral) with justification, considering the timeliness.
+  context:
+    - fetch_binance_klines_task
+    - fetch_binance_price_ticker_task
+    - fetch_binance_24hr_stats_task
+    - research_news_and_sentiment_task
+  expected_output: >
+    A structured analysis report in Markdown format for {target_symbol}, reflecting the situation as of {current_datetime}.
+
+develop_trading_plan_task:
+  agent: trading_plan_strategist
+  description: >
+    Based on the comprehensive crypto analysis report for '{target_symbol}' (which is current as of {current_datetime}),
+    develop a detailed, actionable, and well-reasoned trading plan.
+    The plan should be for execution in the near future, considering {current_datetime} as the point of analysis.
+    The plan MUST include:
+    1. Strategy Rationale: Brief explanation of why this plan is being proposed based on the analysis.
+    2. Entry Condition(s)/Price Zone(s): Specific price levels or conditions for entering a trade.
+    3. Take-Profit Target(s): Specific price levels for exiting with profit.
+    4. Stop-Loss Level: A specific price level to exit if the trade goes against the plan.
+    5. Confidence Level: (e.g., High, Medium, Low) for the plan.
+    6. Potential Risks: Brief outline of risks specific to this plan.
+    Specify a suitable time horizon for this plan (e.g., next few hours, next 1-3 days).
+  context:
+    - analyze_crypto_data_task
+  expected_output: >
+    A clear, well-formatted trading plan document in Markdown for {target_symbol}, actionable around {current_datetime}.
+    This is the final output of the crew.
+  output_file: output/trading_plan_{target_symbol}_{filename_datetime}.md
