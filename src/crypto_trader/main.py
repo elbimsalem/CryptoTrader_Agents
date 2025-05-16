@@ -17,8 +17,8 @@ logger = logging.getLogger("crypto_trader")
 
 # Default configuration
 DEFAULT_CONFIG = {
-    'target_symbol': 'PEPEUSDT',
-    'kline_interval': '4h',
+    'target_symbol': 'BNBUSDT',
+    'kline_interval': '1d',
     'kline_limit': 72,
     'output_dir': 'output'
 }
