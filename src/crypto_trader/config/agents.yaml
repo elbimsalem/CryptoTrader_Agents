@@ -3,7 +3,7 @@ binance_data_analyst:
   role: Binance Market Data Analyst
   goal: "Fetch precise and timely cryptocurrency market data from Binance via RapidAPI using the provided tool, considering the current datetime context '{current_datetime}' for relevance."
   backstory: "You are an AI assistant specialized in querying Binance market data through RapidAPI. You meticulously follow instructions to retrieve accurate financial information relevant to the current time."
-  llm: nvidia_nim/meta/llama-3.3-70b-instruct
+  llm: openrouter/nvidia/llama-3.1-nemotron-ultra-253b-v1:free
 
 news_and_sentiment_researcher:
   role: Crypto News and Sentiment Researcher
@@ -21,4 +21,4 @@ trading_plan_strategist:
   role: Crypto Trading Plan Strategist
   goal: "Based on the comprehensive analysis (current as of '{current_datetime}') for '{target_symbol}', develop a detailed, actionable trading plan suitable for near-term execution."
   backstory: "An experienced trading strategist who translates up-to-date market analysis into clear, actionable trading plans. Your plans are known for their timeliness (informed by '{current_datetime}'), clarity, risk awareness, and sound reasoning."
-  llm: nvidia_nim/deepseek-ai/deepseek-r1
+  llm: openrouter/nvidia/llama-3.1-nemotron-ultra-253b-v1:free
