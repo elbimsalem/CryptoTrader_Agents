@@ -1,54 +1,170 @@
-# CryptoTrader Crew
+# CryptoTrader Documentation
 
-Welcome to the CryptoTrader Crew project, powered by [crewAI](https://crewai.com). This template is designed to help you set up a multi-agent AI system with ease, leveraging the powerful and flexible framework provided by crewAI. Our goal is to enable your agents to collaborate effectively on complex tasks, maximizing their collective intelligence and capabilities.
+## Overview
 
-## Installation
+CryptoTrader is an AI-driven cryptocurrency trading plan generator powered by [crewAI](https://crewai.com). The system employs multiple AI agents that collaborate to analyze cryptocurrency market data, research news and sentiment, and develop actionable trading strategies.
 
-Ensure you have Python >=3.10 <3.13 installed on your system. This project uses [UV](https://docs.astral.sh/uv/) for dependency management and package handling, offering a seamless setup and execution experience.
+## Project Structure
 
-First, if you haven't already, install uv:
+```
+crypto_trader/
+├── output/            # Directory for storing generated trading plans
+├── .venv/             # Python virtual environment
+├── knowledge/         # Knowledge base for the project
+├── src/               # Source code
+│   └── crypto_trader/
+│       ├── config/
+│       │   ├── agents.yaml  # Agent configurations
+│       │   └── tasks.yaml   # Task configurations
+│       ├── tools/
+│       │   └── binance_rapidapi_tool.py  # Tool for Binance API interactions
+│       ├── crew.py    # Main crew definition with agents and tasks
+│       ├── main.py    # Entry point and CLI interface
+│       └── __init__.py
+├── tests/             # Unit tests directory
+├── README.md          # Project documentation
+├── pyproject.toml     # Project configuration
+└── .gitignore         # Git ignore file
+```
 
+## Installation and Setup
+
+### Prerequisites
+- Python 3.10 or higher (< 3.13)
+- UV for dependency management
+
+### Installation Steps
+1. Install UV:
 ```bash
 pip install uv
 ```
 
-Next, navigate to your project directory and install the dependencies:
+2. Clone the repository and navigate to the project directory
 
-(Optional) Lock the dependencies and install them by using the CLI command:
+3. Install dependencies:
 ```bash
 crewai install
 ```
-### Customizing
 
-**Add your `OPENAI_API_KEY` into the `.env` file**
+4. Configure API keys:
+   - Add `OPENAI_API_KEY` to `.env` file (for LLM access)
+   - Add `RAPIDAPI_KEY` and `RAPIDAPI_BINANCE_HOST` to `.env` file (for Binance data access)
+   - Add `SERPER_API_KEY` to `.env` file (for web search capabilities)
 
-- Modify `src/crypto_trader/config/agents.yaml` to define your agents
-- Modify `src/crypto_trader/config/tasks.yaml` to define your tasks
-- Modify `src/crypto_trader/crew.py` to add your own logic, tools and specific args
-- Modify `src/crypto_trader/main.py` to add custom inputs for your agents and tasks
+## Core Components
 
-## Running the Project
+### AI Agents
 
-To kickstart your crew of AI agents and begin task execution, run this from the root folder of your project:
+The system employs four specialized AI agents:
+
+1. **Binance Data Analyst**
+   - Role: Fetch and process cryptocurrency market data from Binance
+   - Tools: BinanceRapidApiTool
+   - LLM: nvidia_nim/meta/llama-3.3-70b-instruct
+
+2. **News and Sentiment Researcher**
+   - Role: Research and analyze news and market sentiment
+   - Tools: SerperDevTool, ScrapeWebsiteTool
+   - LLM: nvidia_nim/meta/llama-3.3-70b-instruct
+
+3. **Crypto Analyst**
+   - Role: Analyze market data and news to provide comprehensive insights
+   - LLM: nvidia_nim/deepseek-ai/deepseek-r1
+
+4. **Trading Plan Strategist**
+   - Role: Develop actionable trading plans based on analysis
+   - LLM: nvidia_nim/deepseek-ai/deepseek-r1
+
+### Tasks
+
+The agents collaborate on a sequence of tasks:
+
+1. **Fetch Binance Klines Task**: Retrieve historical candlestick data
+2. **Fetch Binance Price Ticker Task**: Get current price information
+3. **Fetch Binance 24hr Stats Task**: Get 24-hour market statistics
+4. **Research News and Sentiment Task**: Gather and analyze recent news
+5. **Analyze Crypto Data Task**: Synthesize market data and news
+6. **Develop Trading Plan Task**: Create an actionable trading strategy
+
+### Tools
+
+The project uses custom and third-party tools:
+
+1. **BinanceRapidApiTool**: Custom tool for accessing Binance cryptocurrency data via RapidAPI
+2. **SerperDevTool**: For web searching capabilities (from crewai_tools)
+3. **ScrapeWebsiteTool**: For extracting information from web pages (from crewai_tools)
+
+## Usage
+
+### Basic Usage
+
+Run the project with default configuration:
 
 ```bash
-$ crewai run
+crewai run
 ```
 
-This command initializes the crypto_trader Crew, assembling the agents and assigning them tasks as defined in your configuration.
+This will:
+1. Generate a trading plan for the default cryptocurrency (PEPEUSDT)
+2. Save the report to the `output/` directory
 
-This example, unmodified, will run the create a `report.md` file with the output of a research on LLMs in the root folder.
+### Advanced Usage
 
-## Understanding Your Crew
+Customize the execution with command-line arguments:
 
-The crypto_trader Crew is composed of multiple AI agents, each with unique roles, goals, and tools. These agents collaborate on a series of tasks, defined in `config/tasks.yaml`, leveraging their collective skills to achieve complex objectives. The `config/agents.yaml` file outlines the capabilities and configurations of each agent in your crew.
+```bash
+python -m src.crypto_trader.main --symbol BTCUSDT --interval 1h --limit 100 --output custom_output --verbose
+```
 
-## Support
+Available parameters:
+- `--symbol` or `-s`: Cryptocurrency trading symbol (default: PEPEUSDT)
+- `--interval` or `-i`: Kline interval (default: 4h)
+- `--limit` or `-l`: Number of klines to fetch (default: 72)
+- `--output` or `-o`: Output directory (default: output)
+- `--verbose` or `-v`: Enable verbose logging
 
-For support, questions, or feedback regarding the CryptoTrader Crew or crewAI.
-- Visit our [documentation](https://docs.crewai.com)
-- Reach out to us through our [GitHub repository](https://github.com/joaomdmoura/crewai)
-- [Join our Discord](https://discord.com/invite/X4JWnZnxPb)
-- [Chat with our docs](https://chatg.pt/DWjSBZn)
+## Output
 
-Let's create wonders together with the power and simplicity of crewAI.
+The system generates a comprehensive trading plan in Markdown format containing:
+
+1. Market data analysis (price, volume, trends)
+2. News and sentiment analysis
+3. Support and resistance levels
+4. Entry and exit points
+5. Risk management strategies
+6. Profit targets
+
+The output is saved to a file named `trading_plan_{target_symbol}_{datetime}.md` in the output directory.
+
+## Extending the Project
+
+### Adding New Agents
+
+1. Define the agent in `src/crypto_trader/config/agents.yaml`
+2. Implement the agent class in `src/crypto_trader/crew.py`
+3. Add associated tasks in `src/crypto_trader/config/tasks.yaml`
+
+### Adding New Tools
+
+1. Create a new tool in `src/crypto_trader/tools/`
+2. Implement the tool following the crewAI BaseTool pattern
+3. Add the tool to the appropriate agent in `src/crypto_trader/crew.py`
+
+## Troubleshooting
+
+Common issues:
+
+1. **API Key Errors**: Ensure all required API keys are properly set in the `.env` file
+2. **Dependency Issues**: Make sure UV is installed and dependencies are properly locked
+3. **Rate Limiting**: If hitting RapidAPI rate limits, consider implementing retry logic or upgrading your plan
+
+## Dependencies
+
+- crewai: Framework for multi-agent AI systems
+- requests: For API interactions
+- pydantic: For data validation
+- python-dotenv: For environment variable management
+
+## License
+
+See LICENSE file for details. 
