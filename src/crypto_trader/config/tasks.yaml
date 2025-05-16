@@ -34,10 +34,18 @@ fetch_binance_24hr_stats_task:
 research_news_and_sentiment_task:
   agent: news_and_sentiment_researcher
   description: >
-    Conduct comprehensive online research for the cryptocurrency '{target_symbol}', considering information available up to {current_datetime}.
-    Focus on recent news (last 3-7 days from {current_datetime}), significant developments, partnerships,
-    and overall market sentiment from reputable sources, forums, and social media.
-    Identify any major upcoming events or catalysts relevant as of {current_datetime}.
+    Conduct comprehensive online research for '{target_symbol}'.
+    Focus on recent news from reputable sources.
+    Specifically, check for news on the following websites if relevant information is found:
+    - https://www.coindesk.com/
+    - https://cointelegraph.com/
+    - https://www.theblockcrypto.com/
+    - https://www.coingecko.com/
+    - https://coinmarketcap.com/
+    - https://messari.io/
+    - [Official Blog URL for {target_symbol} if known]
+    Use your search tool to find relevant articles on these sites or other reputable sources,
+    and then use the scrape tool to get detailed content from the most important articles.
   expected_output: >
     A concise summary report of qualitative findings for {target_symbol} (relevant up to {current_datetime}), including:
     - Key recent news items and their potential impact.
