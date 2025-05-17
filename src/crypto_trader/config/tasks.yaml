@@ -43,15 +43,38 @@ research_news_and_sentiment_task:
     - https://www.coingecko.com/
     - https://coinmarketcap.com/
     - https://messari.io/
+    # Specialized crypto news sources
+    - https://decrypt.co/
+    - https://cryptoslate.com/
+    - https://bitcoinmagazine.com/
+    - https://ambcrypto.com/
+    # Social media monitoring
+    - https://twitter.com/search?q=%24{target_symbol}
+    - https://www.reddit.com/search/?q={target_symbol}
+    - https://www.tradingview.com/symbols/{target_symbol}/
+    # Regional news sources
+    - https://forkast.news/ # Asia-focused
+    - https://cryptonews.com/
+    - https://www.cryptoglobe.com/ # European perspective
+    # Analysis platforms
+    - https://glassnode.com/
+    - https://www.santiment.net/
+    - https://defillama.com/ # For DeFi tokens
     - [Official Blog URL for {target_symbol} if known]
     Use your search tool to find relevant articles on these sites or other reputable sources,
     and then use the scrape tool to get detailed content from the most important articles.
+    For social media sources, focus on identifying trending narratives and sentiment from influential accounts.
+    Prioritize news from the last 24-48 hours, and include regional perspectives that might affect global markets.
+    Consider the relative authority of different sources when weighing conflicting information.
   expected_output: >
     A concise summary report of qualitative findings for {target_symbol} (relevant up to {current_datetime}), including:
     - Key recent news items and their potential impact.
     - Prevailing market sentiment (e.g., bullish, bearish, neutral) with supporting evidence.
     - Notable online discussions or influencer opinions.
     - Any identified upcoming catalysts or risk factors.
+    - Social media sentiment metrics (volume of discussion, sentiment distribution).
+    - Regional market perspectives and any geographical sentiment divergence.
+    - Comparison of information quality and sentiment across different types of sources.
     Format as a well-organized text or markdown.
 
 analyze_crypto_data_task:
