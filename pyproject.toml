@@ -5,11 +5,16 @@ description = "crypto_trader using crewAI"
 authors = [{ name = "Your Name", email = "you@example.com" }]
 requires-python = ">=3.10,<3.13"
 dependencies = [
-    "crewai[tools]>=0.120.1,<1.0.0"
+    "crewai[tools]>=0.120.1,<1.0.0",
+    "langchain-openai>=0.1.0",
+    "python-dotenv>=1.0.0",
+    "requests>=2.31.0",
+    "pydantic>=2.0.0"
 ]
 
 [project.scripts]
 crypto_trader = "crypto_trader.main:run"
+autonomous_trader = "crypto_trader.autonomous_main:main"
 run_crew = "crypto_trader.main:run"
 train = "crypto_trader.main:train"
 replay = "crypto_trader.main:replay"

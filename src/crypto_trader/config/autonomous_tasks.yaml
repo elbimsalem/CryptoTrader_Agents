@@ -1,0 +1,401 @@
+# Enhanced Autonomous Trading Tasks Configuration
+
+# Market Discovery and Selection Tasks
+scan_market_opportunities:
+  agent: market_scanner
+  description: >
+    Scan the cryptocurrency market for trading opportunities using the Binance Direct API tool.
+    
+    Actions to perform:
+    1. Get top trading symbols by volume using action 'get_top_symbols' with limit 50
+    2. For top 20 symbols, get 24hr ticker data to identify momentum and volatility
+    3. Analyze volume, price changes, and trading activity
+    4. Score each opportunity based on:
+       - Volume (higher is better, minimum $5M daily)
+       - Volatility (moderate volatility preferred, 3-15% daily range)
+       - Momentum (recent price movement and volume surge)
+       - Liquidity (bid-ask spread analysis)
+    
+    Current market context: '{current_datetime}'
+    
+    CRITICAL OUTPUT REQUIREMENTS:
+    - Provide ranked list of top 10 trading opportunities
+    - Include specific metrics: 24h volume, price change %, volatility score
+    - Highlight any unusual market conditions or volume spikes
+    - Rate each opportunity from 1-10 based on technical attractiveness
+  expected_output: >
+    JSON-formatted report containing:
+    1. Market Overview (total market conditions, BTC dominance impact)
+    2. Top 10 Ranked Opportunities with detailed metrics
+    3. Risk Factors identified for each asset
+    4. Recommended focus assets (top 3-5 for further analysis)
+
+select_trading_assets:
+  agent: asset_selector
+  description: >
+    Evaluate the market scan results and select optimal assets for autonomous trading.
+    Consider portfolio diversification, correlation analysis, and risk-adjusted potential.
+    
+    Selection criteria:
+    - Fundamental strength (project quality, adoption, development activity)
+    - Technical setup quality (chart patterns, support/resistance levels)
+    - Risk-adjusted return potential
+    - Correlation with existing positions (if any)
+    - Liquidity and execution feasibility
+    - News and sentiment alignment
+    
+    Portfolio constraints:
+    - Maximum 5 simultaneous positions
+    - No more than 30% allocation to any single asset
+    - Avoid highly correlated assets (correlation > 0.8)
+    
+    Current context: '{current_datetime}'
+  context:
+    - scan_market_opportunities
+  expected_output: >
+    Asset selection report containing:
+    1. Selected assets (3-5 symbols) with allocation percentages
+    2. Rationale for each selection (technical + fundamental)
+    3. Risk assessment for each asset
+    4. Expected correlation matrix
+    5. Rejected assets with reasons
+    6. Portfolio diversification score
+
+# Enhanced Market Analysis Tasks
+fetch_comprehensive_market_data:
+  agent: market_data_analyst
+  description: >
+    For each selected trading asset, gather comprehensive market data using direct Binance API.
+    
+    Data collection requirements:
+    1. Current price and order book (action 'get_ticker_24hr' and 'get_orderbook')
+    2. Historical klines for multiple timeframes:
+       - 1h interval, 168 periods (1 week)
+       - 4h interval, 168 periods (4 weeks)  
+       - 1d interval, 90 periods (3 months)
+    3. Market depth analysis (top 20 bid/ask levels)
+    4. Recent trading volume patterns
+    
+    For each asset, calculate:
+    - Support and resistance levels
+    - Moving averages (20, 50, 200 period)
+    - Volatility metrics (ATR, Bollinger Bands)
+    - Volume profile analysis
+    - Market microstructure indicators
+    
+    Target assets: Use selected assets from asset selection
+    Current analysis time: '{current_datetime}'
+  context:
+    - select_trading_assets
+  expected_output: >
+    Comprehensive market data report for each selected asset including:
+    1. Current market state (price, volume, spread)
+    2. Technical indicator values and signals
+    3. Support/resistance levels with confidence scores
+    4. Volume analysis and liquidity assessment
+    5. Historical volatility patterns
+    6. Market microstructure quality score
+
+research_market_intelligence:
+  agent: news_and_sentiment_researcher
+  description: >
+    Gather comprehensive market intelligence for selected trading assets.
+    Focus on actionable information that could impact short to medium-term price movements.
+    
+    Research scope for each selected asset:
+    1. Recent news and developments (last 24-48 hours)
+    2. Social media sentiment and trends
+    3. Major whale movements or unusual on-chain activity
+    4. Upcoming events, announcements, or catalysts
+    5. Regulatory developments or partnership news
+    6. Technical analysis from respected crypto analysts
+    
+    Intelligence priorities:
+    - Market-moving news (partnerships, listings, regulatory changes)
+    - Sentiment shift indicators
+    - Major holder behavior changes
+    - Technical breakout or breakdown discussions
+    
+    Assessment framework:
+    - News impact probability (High/Medium/Low)
+    - Sentiment confidence level based on source diversity
+    - Timeline for potential impact (Immediate/Short-term/Medium-term)
+    
+    Current intelligence gathering time: '{current_datetime}'
+  context:
+    - select_trading_assets
+  expected_output: >
+    Market intelligence report for each selected asset:
+    1. News Summary (impact-rated developments)
+    2. Sentiment Analysis (bullish/bearish/neutral with confidence)
+    3. Social Media Trends and volume of discussion
+    4. Upcoming Catalysts (events, releases, announcements)
+    5. Risk Factors (regulatory, technical, fundamental)
+    6. Overall Intelligence Score (1-10) for trading favorability
+
+# Advanced Analysis and Strategy Tasks
+perform_advanced_analysis:
+  agent: crypto_analyst
+  description: >
+    Synthesize all collected data to perform comprehensive analysis of selected trading assets.
+    Generate probabilistic forecasts and identify optimal entry/exit levels.
+    
+    Analysis framework:
+    1. Multi-timeframe technical analysis with confluence signals
+    2. Fundamental catalyst assessment and timing
+    3. Sentiment-driven momentum analysis  
+    4. Risk-adjusted opportunity scoring
+    5. Correlation and portfolio impact assessment
+    
+    For each asset, determine:
+    - Probability-weighted price targets (bear/base/bull scenarios)
+    - Optimal entry levels with technical justification
+    - Stop-loss levels based on technical and risk parameters
+    - Take-profit levels with R:R ratio analysis
+    - Position sizing recommendations
+    - Timeline for trade development
+    
+    Integration requirements:
+    - Combine technical signals with fundamental catalysts
+    - Weight sentiment data by reliability and timing
+    - Account for broader market conditions and Bitcoin influence
+    - Consider portfolio construction and diversification effects
+  context:
+    - fetch_comprehensive_market_data
+    - research_market_intelligence
+  expected_output: >
+    Advanced analysis report for each selected asset:
+    1. Overall Trade Assessment (Strong Buy/Buy/Hold/Sell/Strong Sell)
+    2. Price Target Scenarios with probabilities
+    3. Recommended Entry Strategy (limit orders, levels, timing)
+    4. Risk Management Plan (stop-loss, position sizing)
+    5. Take-Profit Strategy (multiple levels, trailing stops)
+    6. Trade Timeline and key monitoring points
+    7. Confidence Level (1-10) for the trading thesis
+
+# Risk Management and Portfolio Tasks
+assess_portfolio_risk:
+  agent: risk_manager
+  description: >
+    Perform comprehensive risk assessment for the proposed trading strategy.
+    Calculate optimal position sizes and implement risk controls.
+    
+    Risk assessment scope:
+    1. Individual asset risk metrics (volatility, max drawdown potential)
+    2. Portfolio-level risk (correlation, concentration, VAR)
+    3. Market risk factors (Bitcoin correlation, sector exposure)
+    4. Liquidity risk assessment for each position
+    5. Execution risk evaluation
+    
+    Position sizing methodology:
+    - Use Kelly Criterion adjusted for crypto volatility
+    - Maximum 2% account risk per trade
+    - Account for correlation in position sizing
+    - Ensure adequate portfolio diversification
+    - Consider market conditions and regime
+    
+    Risk controls to implement:
+    - Individual position stop-losses
+    - Portfolio-level drawdown limits
+    - Correlation-based exposure limits
+    - Volatility-adjusted position sizing
+    - Maximum daily loss limits
+  context:
+    - perform_advanced_analysis
+    - select_trading_assets
+  expected_output: >
+    Portfolio risk management plan:
+    1. Individual Position Sizes ($ amount and % of portfolio)
+    2. Stop-Loss Levels for each position
+    3. Portfolio Risk Metrics (expected volatility, max drawdown)
+    4. Risk Control Parameters (daily limits, exposure caps)
+    5. Monitoring Triggers (when to reduce/exit positions)
+    6. Portfolio Correlation Matrix and diversification score
+    7. Overall Portfolio Risk Score (1-10)
+
+optimize_portfolio_allocation:
+  agent: portfolio_manager
+  description: >
+    Create optimal portfolio allocation strategy balancing risk and return potential.
+    Consider market conditions, asset correlations, and execution constraints.
+    
+    Optimization objectives:
+    - Maximize risk-adjusted returns (Sharpe ratio optimization)
+    - Maintain diversification while capturing opportunities
+    - Account for transaction costs and market impact
+    - Ensure executable position sizes given liquidity
+    - Balance momentum and mean-reversion strategies
+    
+    Portfolio construction constraints:
+    - Maximum 5 concurrent positions
+    - Minimum position size: $1000 equivalent
+    - Maximum single asset allocation: 30%
+    - Target portfolio volatility: 15-25% annualized
+    - Minimum diversification score: 7/10
+    
+    Dynamic management rules:
+    - Rebalancing triggers and frequency
+    - Profit-taking methodology
+    - Loss-cutting procedures
+    - New opportunity integration process
+  context:
+    - assess_portfolio_risk
+    - perform_advanced_analysis
+  expected_output: >
+    Optimized portfolio allocation plan:
+    1. Final Asset Allocations (symbols, percentages, dollar amounts)
+    2. Entry Strategy for each position (order types, timing)
+    3. Portfolio Expected Metrics (return, volatility, Sharpe ratio)
+    4. Rebalancing Rules and triggers
+    5. Performance Monitoring Plan
+    6. Risk Management Integration
+    7. Execution Timeline and priorities
+
+# Trade Execution and Management Tasks
+execute_trading_strategy:
+  agent: trade_executor
+  description: >
+    Execute the optimized trading strategy using direct Binance API integration.
+    Implement intelligent order management and execution algorithms.
+    
+    IMPORTANT: This is a SIMULATION/PAPER TRADING mode by default.
+    Real trading requires explicit user confirmation and proper API credentials.
+    
+    Execution strategy:
+    1. Pre-execution checks (account balance, API connectivity, market conditions)
+    2. Optimal order type selection (market/limit/stop-limit)
+    3. Order timing optimization (avoid high-impact periods)
+    4. Partial fill management and order adjustment
+    5. Slippage monitoring and control
+    6. Post-execution verification and reporting
+    
+    Order management:
+    - Use limit orders when possible to minimize costs
+    - Implement TWAP strategy for larger positions
+    - Set appropriate stop-losses immediately after fills
+    - Monitor execution quality and adjust algorithms
+    
+    Execution workflow:
+    1. Validate all order parameters against risk limits
+    2. Check account balance and buying power
+    3. Place orders with appropriate error handling
+    4. Monitor fills and manage partial executions
+    5. Set stop-losses and take-profit orders
+    6. Update position tracking and reporting
+    
+    CRITICAL SAFETY MEASURES:
+    - Double-check all order parameters before execution
+    - Implement position size limits and validation
+    - Maintain detailed execution logs
+    - Provide clear confirmation of all trades
+  context:
+    - optimize_portfolio_allocation
+    - assess_portfolio_risk
+  expected_output: >
+    Trade execution report:
+    1. Execution Summary (orders placed, fills received)
+    2. Order Details (prices, quantities, timestamps)
+    3. Execution Quality Metrics (slippage, timing, costs)
+    4. Position Status (current holdings, unrealized P&L)
+    5. Risk Control Status (stops placed, limits active)
+    6. Next Actions (monitoring plans, adjustment triggers)
+    7. Execution Performance Score
+
+# Monitoring and Performance Tasks
+monitor_performance:
+  agent: performance_monitor
+  description: >
+    Continuously monitor trading performance and provide optimization insights.
+    Track key metrics and identify areas for strategy improvement.
+    
+    Performance monitoring scope:
+    1. Real-time P&L tracking and attribution
+    2. Risk-adjusted return metrics calculation
+    3. Trade-by-trade performance analysis
+    4. Strategy effectiveness assessment
+    5. Market regime change detection
+    6. Execution quality measurement
+    
+    Key performance indicators:
+    - Total return and risk-adjusted returns
+    - Maximum drawdown and recovery time
+    - Win rate and average win/loss ratios
+    - Sharpe ratio and Sortino ratio
+    - Portfolio volatility and beta to market
+    - Trade execution efficiency metrics
+    
+    Analysis framework:
+    - Compare actual vs expected performance
+    - Identify outperforming and underperforming assets
+    - Analyze correlation breakdown and diversification effectiveness
+    - Monitor risk control effectiveness
+    - Track strategy parameter stability
+    
+    Reporting requirements:
+    - Daily performance snapshots
+    - Weekly strategy review reports
+    - Trade attribution analysis
+    - Risk metric evolution
+    - Recommendation for strategy adjustments
+  context:
+    - execute_trading_strategy
+  expected_output: >
+    Performance monitoring report:
+    1. Current Portfolio Status (positions, values, P&L)
+    2. Performance Metrics (returns, Sharpe, drawdown)
+    3. Trade Analysis (winners, losers, attribution)
+    4. Risk Metric Status (volatility, correlation, exposure)
+    5. Strategy Effectiveness Assessment
+    6. Optimization Recommendations
+    7. Alert Conditions (if any risk limits approached)
+
+# Master Coordination Task
+coordinate_autonomous_trading:
+  agent: strategy_coordinator
+  description: >
+    Orchestrate the entire autonomous trading operation by synthesizing insights from all agents.
+    Make final strategic decisions and ensure coherent execution across all components.
+    
+    Coordination responsibilities:
+    1. Synthesize all agent recommendations into unified strategy
+    2. Resolve conflicts between different agent recommendations
+    3. Make final go/no-go decisions for trade execution
+    4. Coordinate timing of operations across all agents
+    5. Maintain strategy coherence and risk discipline
+    6. Adapt strategy based on changing market conditions
+    
+    Decision-making framework:
+    - Weight agent recommendations by confidence levels
+    - Prioritize risk management over return optimization
+    - Ensure strategy alignment with market regime
+    - Maintain portfolio construction discipline
+    - Consider execution feasibility and costs
+    
+    Strategy oversight:
+    - Monitor overall strategy performance
+    - Identify when strategy adjustments are needed
+    - Coordinate emergency procedures if needed
+    - Maintain audit trail of all decisions
+    - Ensure compliance with risk limits
+    
+    Final authority on:
+    - Asset selection approval
+    - Position sizing final determination
+    - Trade execution authorization
+    - Risk limit adjustments
+    - Strategy parameter changes
+  context:
+    - monitor_performance
+    - execute_trading_strategy
+    - optimize_portfolio_allocation
+  expected_output: >
+    Strategic coordination summary:
+    1. Final Strategy Decisions (assets, allocations, timing)
+    2. Agent Recommendation Synthesis
+    3. Risk Management Oversight Status
+    4. Execution Authorization (approved/denied with reasons)
+    5. Strategy Performance Assessment
+    6. Next Period Planning (adjustments, monitoring focus)
+    7. Strategic Risk Alerts (if any)
+    8. Overall Strategy Confidence Score (1-10)
+  output_file: output/autonomous_trading_strategy_{filename_datetime}.md
