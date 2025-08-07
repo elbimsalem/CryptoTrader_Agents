@@ -234,8 +234,24 @@ class SmartScheduler:
                 self.token_usage_today += 2000
                 self.analysis_count["quick"] += 1
             except Exception as e:
-                logger.error(f"Quick scan failed: {e}")
-                result["error"] = str(e)
+                error_str = str(e)
+                # Check if this is an LLM-related error that might be recoverable
+                if any(phrase in error_str.lower() for phrase in [
+                    "rate limit", "connection error", "timeout", "internal server error"
+                ]):
+                    logger.warning(f"Quick scan failed due to LLM/API issue (retry logic should handle): {e}")
+                    result.update({
+                        "action": "quick_scan_failed_retryable",
+                        "error": error_str,
+                        "tokens_used": 0  # No tokens consumed on failure
+                    })
+                else:
+                    logger.error(f"Quick scan failed with non-retryable error: {e}")
+                    result.update({
+                        "action": "quick_scan_failed",
+                        "error": error_str,
+                        "tokens_used": 0
+                    })
         
         elif level == AnalysisLevel.MEDIUM_ANALYSIS:
             # Run medium analysis (3-5 agents)
@@ -250,8 +266,24 @@ class SmartScheduler:
                 self.token_usage_today += 8000
                 self.analysis_count["medium"] += 1
             except Exception as e:
-                logger.error(f"Medium analysis failed: {e}")
-                result["error"] = str(e)
+                error_str = str(e)
+                # Check if this is an LLM-related error that might be recoverable
+                if any(phrase in error_str.lower() for phrase in [
+                    "rate limit", "connection error", "timeout", "internal server error"
+                ]):
+                    logger.warning(f"Medium analysis failed due to LLM/API issue (retry logic should handle): {e}")
+                    result.update({
+                        "action": "medium_analysis_failed_retryable",
+                        "error": error_str,
+                        "tokens_used": 0
+                    })
+                else:
+                    logger.error(f"Medium analysis failed with non-retryable error: {e}")
+                    result.update({
+                        "action": "medium_analysis_failed",
+                        "error": error_str,
+                        "tokens_used": 0
+                    })
         
         elif level == AnalysisLevel.FULL_ANALYSIS:
             # Run complete analysis (all 10 agents)
@@ -266,8 +298,24 @@ class SmartScheduler:
                 self.token_usage_today += 25000
                 self.analysis_count["full"] += 1
             except Exception as e:
-                logger.error(f"Full analysis failed: {e}")
-                result["error"] = str(e)
+                error_str = str(e)
+                # Check if this is an LLM-related error that might be recoverable
+                if any(phrase in error_str.lower() for phrase in [
+                    "rate limit", "connection error", "timeout", "internal server error"
+                ]):
+                    logger.warning(f"Full analysis failed due to LLM/API issue (retry logic should handle): {e}")
+                    result.update({
+                        "action": "full_analysis_failed_retryable", 
+                        "error": error_str,
+                        "tokens_used": 0
+                    })
+                else:
+                    logger.error(f"Full analysis failed with non-retryable error: {e}")
+                    result.update({
+                        "action": "full_analysis_failed",
+                        "error": error_str,
+                        "tokens_used": 0
+                    })
         
         # Update last analysis time
         self.last_analysis[level.value] = datetime.now()

@@ -17,53 +17,58 @@ from .portfolio_simulator import PortfolioSimulator, DailyReport
 from .tools.portfolio_simulator_tool import PortfolioSimulatorTool
 
 # Import LLM configurations
+from .ionos_llm import get_llm_factory, RetryableChatOpenAI
 from langchain_openai import ChatOpenAI
 import os
 
 def get_test_mode_llm():
-    """Get LLM configuration for test mode agents with fallback options"""
-    ionos_api_key = os.getenv("OPENAI_API_KEY")
-    ionos_base_url = os.getenv("IONOS_BASE_URL", "https://openai.inference.de-txl.ionos.com/v1")
-    
-    # Try IONOS first
-    if ionos_api_key and ionos_base_url:
-        try:
+    """Get LLM configuration for test mode agents with intelligent retry logic"""
+    try:
+        # Use the IONOS LLM factory with built-in retry logic
+        factory = get_llm_factory()
+        return factory.create_llm(
+            model="meta-llama/Meta-Llama-3.1-8B-Instruct",
+            temperature=0.1,
+            max_tokens=3000
+        )
+    except Exception as e:
+        logger.warning(f"Failed to initialize IONOS LLM factory: {e}")
+        
+        # Fallback to manual configuration with retry
+        ionos_api_key = os.getenv("OPENAI_API_KEY")
+        ionos_base_url = os.getenv("IONOS_BASE_URL", "https://openai.inference.de-txl.ionos.com/v1")
+        
+        if ionos_api_key and ionos_base_url:
+            try:
+                return RetryableChatOpenAI(
+                    model="openai/meta-llama/Meta-Llama-3.1-8B-Instruct",
+                    openai_api_key=ionos_api_key,
+                    openai_api_base=ionos_base_url,
+                    temperature=0.1,
+                    max_tokens=3000,
+                    timeout=60,
+                    max_retries=3,    # Use retry logic
+                    base_delay=1.0,
+                    max_delay=30.0
+                )
+            except Exception as e:
+                logger.warning(f"Failed to initialize retry-enabled IONOS LLM: {e}")
+        
+        # Final fallback to standard OpenAI
+        openai_key = os.getenv("OPENAI_API_KEY_FALLBACK") or os.getenv("OPENAI_KEY")
+        if openai_key:
+            logger.info("Using OpenAI as final fallback LLM provider")
             return ChatOpenAI(
-                model="openai/meta-llama/Meta-Llama-3.1-8B-Instruct",
-                openai_api_key=ionos_api_key,
-                openai_api_base=ionos_base_url,
+                model="gpt-3.5-turbo",
+                openai_api_key=openai_key,
                 temperature=0.1,
                 max_tokens=3000,
                 timeout=60,
                 max_retries=2
             )
-        except Exception as e:
-            logger.warning(f"Failed to initialize IONOS LLM: {e}")
-    
-    # Fallback to standard OpenAI if available
-    openai_key = os.getenv("OPENAI_API_KEY_FALLBACK") or os.getenv("OPENAI_KEY")
-    if openai_key:
-        logger.info("Using OpenAI as fallback LLM provider")
-        return ChatOpenAI(
-            model="gpt-3.5-turbo",
-            openai_api_key=openai_key,
-            temperature=0.1,
-            max_tokens=3000,
-            timeout=60,
-            max_retries=2
-        )
-    
-    # Default to IONOS (will fail if connection issues persist)
-    logger.warning("No fallback LLM available, using IONOS (may fail if connection issues)")
-    return ChatOpenAI(
-        model="openai/meta-llama/Meta-Llama-3.1-8B-Instruct",
-        openai_api_key=ionos_api_key or "dummy",
-        openai_api_base=ionos_base_url,
-        temperature=0.1,
-        max_tokens=3000,
-        timeout=60,
-        max_retries=2
-    )
+        
+        # If all else fails, raise the error
+        raise Exception("No LLM configuration available")
 
 # Configure logging
 logger = logging.getLogger("crypto_trader.test_mode_crew")
