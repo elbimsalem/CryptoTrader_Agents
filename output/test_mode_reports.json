@@ -2,34 +2,17 @@
   {
     "date": "2025-08-07",
     "starting_balance": 10000.0,
-    "ending_balance": 10042.4,
-    "daily_pnl": 42.399999999999636,
-    "daily_pnl_pct": 0.4239999999999963,
-    "total_pnl": 42.399999999999636,
-    "total_pnl_pct": 0.4239999999999963,
+    "ending_balance": 9501.8739242,
+    "daily_pnl": -498.12607580000076,
+    "daily_pnl_pct": -4.9812607580000074,
+    "total_pnl": -498.12607580000076,
+    "total_pnl_pct": -4.9812607580000074,
     "positions_count": 1,
     "trades_count": 1,
-    "top_performer": "BTCUSDT (+2.22%)",
-    "worst_performer": "BTCUSDT (2.22%)",
+    "top_performer": "SUIUSDT (+-99.62%)",
+    "worst_performer": "SUIUSDT (-99.62%)",
     "key_actions": [
-      "BUY 0.0444 BTCUSDT @ $45000.0000"
-    ]
-  },
-  {
-    "date": "2025-08-07",
-    "starting_balance": 10042.4,
-    "ending_balance": 10084.8,
-    "daily_pnl": 42.399999999999636,
-    "daily_pnl_pct": 0.422209830319442,
-    "total_pnl": 84.79999999999927,
-    "total_pnl_pct": 0.8479999999999926,
-    "positions_count": 1,
-    "trades_count": 2,
-    "top_performer": "BTCUSDT (+2.22%)",
-    "worst_performer": "BTCUSDT (2.22%)",
-    "key_actions": [
-      "BUY 0.0444 BTCUSDT @ $45000.0000",
-      "BUY 0.0444 BTCUSDT @ $45000.0000"
+      "BUY 0.4995 SUIUSDT @ $1000.0000"
     ]
   }
 ]

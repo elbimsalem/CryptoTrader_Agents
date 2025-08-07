@@ -1,0 +1,32 @@
+{
+  "simulation_summary": {
+    "initial_balance": 100.0,
+    "final_balance": 100.0,
+    "total_pnl": 0.0,
+    "total_return_pct": 0.0,
+    "annualized_return_pct": 0.0,
+    "days_running": 1,
+    "total_trades": 0
+  },
+  "portfolio_breakdown": {
+    "initial_balance": 100.0,
+    "current_balance": 100.0,
+    "positions_value": 0.0,
+    "total_portfolio_value": 100.0,
+    "total_pnl": 0.0,
+    "total_pnl_pct": 0.0,
+    "positions": {},
+    "days_running": 1,
+    "total_trades": 0
+  },
+  "daily_reports_count": 0,
+  "token_usage": {
+    "total_estimated": 0,
+    "analysis_breakdown": {
+      "monitor": 1,
+      "quick": 0,
+      "medium": 0,
+      "full": 0
+    }
+  }
+}

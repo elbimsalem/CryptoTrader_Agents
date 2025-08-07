@@ -4,55 +4,54 @@
 
 | Metric | Value | Change |
 |--------|--------|--------|
-| **Portfolio Value** | $10,084.80 | 📈 $+42.40 (+0.42%) |
-| **Total P&L** | $+84.80 | 🟢 +0.85% |
-| **Cash Balance** | $6,000.00 | Available for trading |
+| **Portfolio Value** | $9,501.87 | 📉 $-498.13 (-4.98%) |
+| **Total P&L** | $-498.13 | 🔴 -4.98% |
+| **Cash Balance** | $9,500.00 | Available for trading |
 | **Active Positions** | 1 | Currently held |
 
 ## 📈 Position Summary
 
 | Symbol | Quantity | Current Value | Unrealized P&L | P&L % |
 |--------|----------|---------------|----------------|-------|
-| **BTCUSDT** | 0.088800 | $4,084.80 | 🟢 $+88.80 | +2.22% |
+| **SUIUSDT** | 0.499500 | $1.87 | 🔴 $-497.63 | -99.62% |
 
 
 ## ⚡ Trading Activity
 
-**Trades Today:** 2
+**Trades Today:** 1
 
 ### Key Actions:
-- BUY 0.0444 BTCUSDT @ $45000.0000
-- BUY 0.0444 BTCUSDT @ $45000.0000
+- BUY 0.4995 SUIUSDT @ $1000.0000
 
 
 ## 🎯 Performance Highlights
 
-- **BTCUSDT (+2.22%)** - Top Performer
-- **BTCUSDT (2.22%)** - Needs Attention
+- **SUIUSDT (+-99.62%)** - Top Performer
+- **SUIUSDT (-99.62%)** - Needs Attention
 
 ## 📊 Portfolio Allocation
 
 | Asset | Allocation | Value |
 |-------|------------|-------|
-| **Cash (USD)** | 59.5% | $6,000.00 |
-| **BTCUSDT** | 40.5% | $4,084.80 |
+| **Cash (USD)** | 100.0% | $9,500.00 |
+| **SUIUSDT** | 0.0% | $1.87 |
 
 
 ## 📈 Historical Performance
 
 - **Simulation Started:** August 07, 2025
 - **Days Running:** 1
-- **Total Trades:** 2
+- **Total Trades:** 1
 - **Initial Balance:** $10,000.00
 
 ## 🎯 Next Actions
 
 Based on today's performance:
 
-- ✅ **Strong Performance** - Consider taking partial profits on outperforming positions
+- ⚠️ **Portfolio Decline** - Review positions and consider risk management actions
 - 💡 **Room to Grow** - Consider additional diversification opportunities
 - 💰 **High Cash Allocation** - Consider deploying capital for potential opportunities
 
 
 ---
-*Report generated on 2025-08-07 09:42:46 | Test Mode Simulation*
+*Report generated on 2025-08-07 15:50:39 | Test Mode Simulation*
