@@ -16,13 +16,22 @@ from langchain_openai import ChatOpenAI
 import os
 
 def get_ionos_llm():
-    """Get IONOS LLM configuration directly"""
+    """Get IONOS LLM configuration using proper litellm provider format"""
+    # Clear any conflicting environment variables first
+    if "OPENAI_BASE_URL" in os.environ:
+        del os.environ["OPENAI_BASE_URL"]
+    
+    # Set the correct environment variables for IONOS
+    os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY", "")
+    os.environ["OPENAI_API_BASE"] = "https://openai.inference.de-txl.ionos.com/v1"
+    
     return ChatOpenAI(
-        model="mistralai/Mixtral-8x7B-Instruct-v0.1",
+        model="openai/meta-llama/Meta-Llama-3.1-8B-Instruct",  # Try a different IONOS model
         openai_api_key=os.getenv("OPENAI_API_KEY"),
-        openai_api_base=os.getenv("IONOS_BASE_URL", "https://openai.inference.de-txl.ionos.com/v1"),
+        openai_api_base="https://openai.inference.de-txl.ionos.com/v1",
         temperature=0.1,
-        max_tokens=4000
+        max_tokens=2000,  # Reduce token limit to avoid potential issues
+        timeout=60  # Add timeout
     )
 
 # Configure logging
