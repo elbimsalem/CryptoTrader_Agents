@@ -12,9 +12,10 @@ from dotenv import load_dotenv
 # Configure logging
 logger = logging.getLogger("crypto_trader.ionos_llm")
 
-class RetryableChatOpenAI(ChatOpenAI):
+class RetryableChatOpenAI:
     """
     ChatOpenAI wrapper with intelligent retry logic for rate limiting and connection errors
+    Uses composition instead of inheritance to avoid Pydantic model conflicts
     """
     
     def __init__(self, max_retries: int = 5, base_delay: float = 1.0, max_delay: float = 60.0, **kwargs):
@@ -26,10 +27,77 @@ class RetryableChatOpenAI(ChatOpenAI):
             base_delay: Initial delay between retries (seconds)
             max_delay: Maximum delay between retries (seconds)
         """
-        super().__init__(**kwargs)
         self.max_retries = max_retries
         self.base_delay = base_delay
         self.max_delay = max_delay
+        
+        # Create the actual ChatOpenAI instance
+        self._llm = ChatOpenAI(**kwargs)
+    
+    def __getattr__(self, name):
+        """Delegate attribute access to the wrapped LLM"""
+        return getattr(self._llm, name)
+    
+    def __call__(self, *args, **kwargs):
+        """Make the wrapper callable like the original LLM"""
+        return self._call_with_retry(*args, **kwargs)
+    
+    def _call_with_retry(self, *args, **kwargs):
+        """Call the LLM with retry logic"""
+        last_error = None
+        
+        for attempt in range(self.max_retries + 1):
+            try:
+                return self._llm(*args, **kwargs)
+            except Exception as error:
+                last_error = error
+                
+                if attempt >= self.max_retries:
+                    logger.error(f"Max retries ({self.max_retries}) exceeded for LLM request")
+                    break
+                
+                if not self._should_retry(error):
+                    break
+                
+                delay = self._calculate_delay(attempt)
+                logger.info(f"Retrying LLM request in {delay:.2f}s (attempt {attempt + 1}/{self.max_retries})")
+                time.sleep(delay)
+        
+        logger.error(f"LLM request failed after {self.max_retries} retries: {last_error}")
+        raise last_error
+    
+    def invoke(self, *args, **kwargs):
+        """CrewAI uses invoke method - add retry logic here too"""
+        return self._call_with_retry_method('invoke', *args, **kwargs)
+    
+    def generate(self, *args, **kwargs):
+        """Generate method with retry logic"""
+        return self._call_with_retry_method('generate', *args, **kwargs)
+    
+    def _call_with_retry_method(self, method_name, *args, **kwargs):
+        """Generic method call with retry logic"""
+        last_error = None
+        method = getattr(self._llm, method_name)
+        
+        for attempt in range(self.max_retries + 1):
+            try:
+                return method(*args, **kwargs)
+            except Exception as error:
+                last_error = error
+                
+                if attempt >= self.max_retries:
+                    logger.error(f"Max retries ({self.max_retries}) exceeded for LLM {method_name}")
+                    break
+                
+                if not self._should_retry(error):
+                    break
+                
+                delay = self._calculate_delay(attempt)
+                logger.info(f"Retrying LLM {method_name} in {delay:.2f}s (attempt {attempt + 1}/{self.max_retries})")
+                time.sleep(delay)
+        
+        logger.error(f"LLM {method_name} failed after {self.max_retries} retries: {last_error}")
+        raise last_error
     
     def _should_retry(self, error: Exception) -> bool:
         """
@@ -100,37 +168,6 @@ class RetryableChatOpenAI(ChatOpenAI):
         # Cap at max_delay
         return min(delay, self.max_delay)
     
-    def _generate_content(self, messages, **kwargs):
-        """
-        Override the main method with retry logic
-        """
-        last_error = None
-        
-        for attempt in range(self.max_retries + 1):
-            try:
-                # Attempt the request
-                return super()._generate(messages, **kwargs)
-            
-            except Exception as error:
-                last_error = error
-                
-                # Check if this is the last attempt
-                if attempt >= self.max_retries:
-                    logger.error(f"Max retries ({self.max_retries}) exceeded for LLM request")
-                    break
-                
-                # Check if we should retry this error
-                if not self._should_retry(error):
-                    break
-                
-                # Calculate delay and wait
-                delay = self._calculate_delay(attempt)
-                logger.info(f"Retrying LLM request in {delay:.2f}s (attempt {attempt + 1}/{self.max_retries})")
-                time.sleep(delay)
-        
-        # If we get here, all retries failed
-        logger.error(f"LLM request failed after {self.max_retries} retries: {last_error}")
-        raise last_error
 
 class IonosLLMFactory:
     """
@@ -225,9 +262,9 @@ class IonosLLMFactory:
         if not self.api_key:
             raise ValueError("OPENAI_API_KEY environment variable not set for IONOS Cloud access")
     
-    def create_llm(self, model: str, temperature: float = 0.1, max_tokens: int = 4000, **kwargs) -> RetryableChatOpenAI:
+    def create_llm(self, model: str, temperature: float = 0.1, max_tokens: int = 4000, **kwargs) -> ChatOpenAI:
         """
-        Create a RetryableChatOpenAI instance configured for IONOS Cloud with intelligent retry logic
+        Create a ChatOpenAI instance configured for IONOS Cloud with built-in retry logic
         """
         if model not in self.AVAILABLE_MODELS:
             raise ValueError(f"Model {model} not available in IONOS Cloud")
@@ -238,7 +275,7 @@ class IonosLLMFactory:
             raise ValueError(f"Model {model} is an embedding model, not suitable for chat")
         
         # Configure retry behavior based on model tier
-        retry_config = self._get_retry_config(model)
+        max_retries = self._get_max_retries(model)
         
         config = {
             "model": f"openai/{model}",  # Use openai prefix as per working remote config
@@ -247,48 +284,36 @@ class IonosLLMFactory:
             "temperature": temperature,
             "max_tokens": max_tokens,
             "timeout": kwargs.get("timeout", 120),
-            **retry_config  # Add retry configuration
+            "max_retries": max_retries  # Use ChatOpenAI's built-in retry
         }
         
         config.update(kwargs)
-        return RetryableChatOpenAI(**config)
+        return ChatOpenAI(**config)
     
-    def _get_retry_config(self, model: str) -> Dict[str, Any]:
+    def _get_max_retries(self, model: str) -> int:
         """
-        Get retry configuration based on model tier and expected usage
+        Get max retries based on model tier and expected usage
         
         Args:
             model: The model name
             
         Returns:
-            Dict with retry configuration
+            int: Number of max retries
         """
         model_info = self.AVAILABLE_MODELS[model]
         cost = model_info.get("cost", "medium")
         
-        # More aggressive retries for expensive models (we want them to succeed)
-        # Less aggressive retries for cheap models (fail fast, try again later)
+        # More retries for expensive models (we want them to succeed)
+        # Fewer retries for cheap models (fail fast, try again later)
         if cost == "high":
-            return {
-                "max_retries": 8,      # More retries for expensive models
-                "base_delay": 2.0,     # Longer initial delay
-                "max_delay": 120.0     # Up to 2 minutes max delay
-            }
+            return 8      # More retries for expensive models
         elif cost == "medium":
-            return {
-                "max_retries": 5,      # Standard retries
-                "base_delay": 1.5,     # Standard delay
-                "max_delay": 60.0      # Up to 1 minute max delay
-            }
+            return 5      # Standard retries
         else:  # low or very_low cost
-            return {
-                "max_retries": 3,      # Fewer retries for cheap models
-                "base_delay": 1.0,     # Shorter delay
-                "max_delay": 30.0      # Up to 30 seconds max delay
-            }
+            return 3      # Fewer retries for cheap models
     
     # Optimized model assignments for each agent type
-    def get_market_scanner_llm(self) -> Union[ChatOpenAI, RetryableChatOpenAI]:
+    def get_market_scanner_llm(self) -> ChatOpenAI:
         """Fast, efficient model for market scanning tasks"""
         return self.create_llm(
             model="mistralai/Mixtral-8x7B-Instruct-v0.1",
@@ -296,7 +321,7 @@ class IonosLLMFactory:
             max_tokens=2000
         )
     
-    def get_asset_selector_llm(self) -> Union[ChatOpenAI, RetryableChatOpenAI]:
+    def get_asset_selector_llm(self) -> ChatOpenAI:
         """Balanced model for asset selection analysis"""
         return self.create_llm(
             model="meta-llama/Llama-3.3-70B-Instruct",
@@ -304,7 +329,7 @@ class IonosLLMFactory:
             max_tokens=3000
         )
     
-    def get_market_data_analyst_llm(self) -> Union[ChatOpenAI, RetryableChatOpenAI]:
+    def get_market_data_analyst_llm(self) -> ChatOpenAI:
         """Efficient model for data analysis tasks"""
         return self.create_llm(
             model="mistralai/Mistral-Nemo-Instruct-2407",
@@ -312,7 +337,7 @@ class IonosLLMFactory:
             max_tokens=3000
         )
     
-    def get_news_researcher_llm(self) -> Union[ChatOpenAI, RetryableChatOpenAI]:
+    def get_news_researcher_llm(self) -> ChatOpenAI:
         """Large model for complex sentiment analysis"""
         return self.create_llm(
             model="meta-llama/Llama-3.1-405B-Instruct-FP8",
@@ -320,7 +345,7 @@ class IonosLLMFactory:
             max_tokens=4000
         )
     
-    def get_crypto_analyst_llm(self) -> Union[ChatOpenAI, RetryableChatOpenAI]:
+    def get_crypto_analyst_llm(self) -> ChatOpenAI:
         """Largest model for comprehensive analysis"""
         return self.create_llm(
             model="meta-llama/Meta-Llama-3.1-405B-Instruct-FP8",
@@ -328,7 +353,7 @@ class IonosLLMFactory:
             max_tokens=6000
         )
     
-    def get_risk_manager_llm(self) -> Union[ChatOpenAI, RetryableChatOpenAI]:
+    def get_risk_manager_llm(self) -> ChatOpenAI:
         """Precise model for risk calculations"""
         return self.create_llm(
             model="meta-llama/Llama-3.3-70B-Instruct",
@@ -336,7 +361,7 @@ class IonosLLMFactory:
             max_tokens=3000
         )
     
-    def get_portfolio_manager_llm(self) -> Union[ChatOpenAI, RetryableChatOpenAI]:
+    def get_portfolio_manager_llm(self) -> ChatOpenAI:
         """Large model for complex portfolio optimization"""
         return self.create_llm(
             model="meta-llama/Meta-Llama-3.1-405B-Instruct-FP8",
@@ -344,7 +369,7 @@ class IonosLLMFactory:
             max_tokens=4000
         )
     
-    def get_trade_executor_llm(self) -> Union[ChatOpenAI, RetryableChatOpenAI]:
+    def get_trade_executor_llm(self) -> ChatOpenAI:
         """Code-specialized model for execution logic"""
         return self.create_llm(
             model="meta-llama/CodeLlama-13b-Instruct-hf",
@@ -352,7 +377,7 @@ class IonosLLMFactory:
             max_tokens=2000
         )
     
-    def get_performance_monitor_llm(self) -> Union[ChatOpenAI, RetryableChatOpenAI]:
+    def get_performance_monitor_llm(self) -> ChatOpenAI:
         """Efficient model for monitoring tasks"""
         return self.create_llm(
             model="mistralai/Mistral-Small-24B-Instruct",
@@ -360,7 +385,7 @@ class IonosLLMFactory:
             max_tokens=3000
         )
     
-    def get_strategy_coordinator_llm(self) -> Union[ChatOpenAI, RetryableChatOpenAI]:
+    def get_strategy_coordinator_llm(self) -> ChatOpenAI:
         """Largest model for strategic coordination"""
         return self.create_llm(
             model="meta-llama/Meta-Llama-3.1-405B-Instruct-FP8",
@@ -379,34 +404,34 @@ def get_llm_factory() -> IonosLLMFactory:
     return _llm_factory
 
 # Convenience functions for each agent type
-def get_market_scanner_llm() -> Union[ChatOpenAI, RetryableChatOpenAI]:
+def get_market_scanner_llm() -> ChatOpenAI:
     return get_llm_factory().get_market_scanner_llm()
 
-def get_asset_selector_llm() -> Union[ChatOpenAI, RetryableChatOpenAI]:
+def get_asset_selector_llm() -> ChatOpenAI:
     return get_llm_factory().get_asset_selector_llm()
 
-def get_market_data_analyst_llm() -> Union[ChatOpenAI, RetryableChatOpenAI]:
+def get_market_data_analyst_llm() -> ChatOpenAI:
     return get_llm_factory().get_market_data_analyst_llm()
 
-def get_news_researcher_llm() -> Union[ChatOpenAI, RetryableChatOpenAI]:
+def get_news_researcher_llm() -> ChatOpenAI:
     return get_llm_factory().get_news_researcher_llm()
 
-def get_crypto_analyst_llm() -> Union[ChatOpenAI, RetryableChatOpenAI]:
+def get_crypto_analyst_llm() -> ChatOpenAI:
     return get_llm_factory().get_crypto_analyst_llm()
 
-def get_risk_manager_llm() -> Union[ChatOpenAI, RetryableChatOpenAI]:
+def get_risk_manager_llm() -> ChatOpenAI:
     return get_llm_factory().get_risk_manager_llm()
 
-def get_portfolio_manager_llm() -> Union[ChatOpenAI, RetryableChatOpenAI]:
+def get_portfolio_manager_llm() -> ChatOpenAI:
     return get_llm_factory().get_portfolio_manager_llm()
 
-def get_trade_executor_llm() -> Union[ChatOpenAI, RetryableChatOpenAI]:
+def get_trade_executor_llm() -> ChatOpenAI:
     return get_llm_factory().get_trade_executor_llm()
 
-def get_performance_monitor_llm() -> Union[ChatOpenAI, RetryableChatOpenAI]:
+def get_performance_monitor_llm() -> ChatOpenAI:
     return get_llm_factory().get_performance_monitor_llm()
 
-def get_strategy_coordinator_llm() -> Union[ChatOpenAI, RetryableChatOpenAI]:
+def get_strategy_coordinator_llm() -> ChatOpenAI:
     return get_llm_factory().get_strategy_coordinator_llm()
 
 # Model assignment summary for documentation

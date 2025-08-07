@@ -10,6 +10,10 @@ import logging
 import json
 from datetime import datetime, timedelta
 from typing import Dict, Any, Optional
+from dotenv import load_dotenv
+
+# Load environment variables first
+load_dotenv()
 
 # Import test mode components
 from .test_mode_crew import TestModeCryptoTradingCrew, run_test_mode_crew

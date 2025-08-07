@@ -6,6 +6,10 @@ import logging
 from typing import Dict, List, Optional, Any
 from crewai import Agent, Task, Crew, Process
 from crewai.project import CrewBase, agent, crew, task
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Import tools
 from .tools.binance_direct_tool import BinanceDirectTool
@@ -16,7 +20,7 @@ from langchain_openai import ChatOpenAI
 import os
 
 def get_ionos_llm():
-    """Get IONOS LLM configuration using proper litellm provider format"""
+    """Get IONOS LLM configuration using proper litellm provider format with retry logic"""
     # Clear any conflicting environment variables first
     if "OPENAI_BASE_URL" in os.environ:
         del os.environ["OPENAI_BASE_URL"]
@@ -31,7 +35,8 @@ def get_ionos_llm():
         openai_api_base="https://openai.inference.de-txl.ionos.com/v1",
         temperature=0.1,
         max_tokens=2000,  # Reduce token limit to avoid potential issues
-        timeout=60  # Add timeout
+        timeout=60,  # Add timeout
+        max_retries=3  # Add retry logic for rate limiting
     )
 
 # Configure logging
