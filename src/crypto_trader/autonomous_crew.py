@@ -26,7 +26,7 @@ def get_ionos_llm():
     os.environ["OPENAI_API_BASE"] = "https://openai.inference.de-txl.ionos.com/v1"
     
     return ChatOpenAI(
-        model="openai/meta-llama/Meta-Llama-3.1-8B-Instruct",  # Try a different IONOS model
+        model="openai/meta-llama/Meta-Llama-3.1-8B-Instruct",  # Use openai prefix as in remote
         openai_api_key=os.getenv("OPENAI_API_KEY"),
         openai_api_base="https://openai.inference.de-txl.ionos.com/v1",
         temperature=0.1,

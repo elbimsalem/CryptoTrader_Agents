@@ -53,27 +53,80 @@ crewai install
 
 ## Core Components
 
-### AI Agents
+### AI Agents & IONOS Cloud LLM Configuration
 
-The system employs four specialized AI agents:
+The system employs multiple specialized AI agents powered by IONOS Cloud models:
 
-1. **Binance Data Analyst**
-   - Role: Fetch and process cryptocurrency market data from Binance
-   - Tools: BinanceRapidApiTool
-   - LLM: nvidia_nim/meta/llama-3.3-70b-instruct
+#### Agent LLM Model Assignments:
 
-2. **News and Sentiment Researcher**
-   - Role: Research and analyze news and market sentiment
-   - Tools: SerperDevTool, ScrapeWebsiteTool
-   - LLM: nvidia_nim/meta/llama-3.3-70b-instruct
+| Agent | Model | Temperature | Max Tokens | Purpose |
+|-------|-------|-------------|------------|---------|
+| **Market Scanner** | `mistralai/Mixtral-8x7B-Instruct-v0.1` | 0.0 | 2000 | Fast, efficient market scanning |
+| **Asset Selector** | `meta-llama/Llama-3.3-70B-Instruct` | 0.1 | 3000 | Balanced asset selection analysis |
+| **Market Data Analyst** | `mistralai/Mistral-Nemo-Instruct-2407` | 0.0 | 3000 | Efficient data analysis |
+| **News Researcher** | `meta-llama/Meta-Llama-3.1-405B-Instruct-FP8` | 0.1 | 4000 | Large model for sentiment analysis |
+| **Crypto Analyst** | `meta-llama/Meta-Llama-3.1-405B-Instruct-FP8` | 0.1 | 6000 | Comprehensive analysis (largest tokens) |
+| **Risk Manager** | `meta-llama/Llama-3.3-70B-Instruct` | 0.0 | 3000 | Conservative risk calculations |
+| **Portfolio Manager** | `meta-llama/Meta-Llama-3.1-405B-Instruct-FP8` | 0.05 | 4000 | Very conservative portfolio optimization |
+| **Trade Executor** | `meta-llama/CodeLlama-13b-Instruct-hf` | 0.0 | 2000 | Code-specialized for execution logic |
+| **Performance Monitor** | `mistralai/Mistral-Small-24B-Instruct` | 0.0 | 3000 | Efficient monitoring and reporting |
+| **Strategy Coordinator** | `meta-llama/Meta-Llama-3.1-405B-Instruct-FP8` | 0.1 | 5000 | Strategic coordination |
 
-3. **Crypto Analyst**
-   - Role: Analyze market data and news to provide comprehensive insights
-   - LLM: nvidia_nim/deepseek-ai/deepseek-r1
+#### Model Configuration Details:
 
-4. **Trading Plan Strategist**
-   - Role: Develop actionable trading plans based on analysis
-   - LLM: nvidia_nim/deepseek-ai/deepseek-r1
+**Mistral Models:**
+```python
+# Market Scanner Agent
+model="openai/mistralai/Mixtral-8x7B-Instruct-v0.1"
+temperature=0.0  # Deterministic for data processing
+max_tokens=2000
+timeout=120
+openai_api_base="https://openai.inference.de-txl.ionos.com/v1"
+
+# Market Data Analyst Agent  
+model="openai/mistralai/Mistral-Nemo-Instruct-2407"
+temperature=0.0  # Deterministic for data analysis
+max_tokens=3000
+timeout=120
+openai_api_base="https://openai.inference.de-txl.ionos.com/v1"
+
+# Performance Monitor Agent
+model="openai/mistralai/Mistral-Small-24B-Instruct"
+temperature=0.0  # Factual reporting
+max_tokens=3000
+timeout=120
+openai_api_base="https://openai.inference.de-txl.ionos.com/v1"
+```
+
+**Llama Models:**
+```python
+# Asset Selector & Risk Manager
+model="openai/meta-llama/Llama-3.3-70B-Instruct"
+temperature=0.0-0.1  # Conservative to slight creativity
+max_tokens=3000
+timeout=120
+openai_api_base="https://openai.inference.de-txl.ionos.com/v1"
+
+# News Researcher, Crypto Analyst, Portfolio Manager, Strategy Coordinator
+model="openai/meta-llama/Meta-Llama-3.1-405B-Instruct-FP8"
+temperature=0.05-0.1  # Very conservative to balanced
+max_tokens=4000-6000  # Varies by agent needs
+timeout=120
+openai_api_base="https://openai.inference.de-txl.ionos.com/v1"
+
+# Trade Executor
+model="openai/meta-llama/CodeLlama-13b-Instruct-hf"
+temperature=0.0  # Deterministic for trade execution
+max_tokens=2000
+timeout=120
+openai_api_base="https://openai.inference.de-txl.ionos.com/v1"
+```
+
+#### Model Usage Summary:
+- **Most Used**: `meta-llama/Meta-Llama-3.1-405B-Instruct-FP8` (4 agents - highest reasoning)
+- **Balanced**: `meta-llama/Llama-3.3-70B-Instruct` (2 agents - medium cost)
+- **Efficient**: Various Mistral models (3 agents - fast/low cost)
+- **Specialized**: `meta-llama/CodeLlama-13b-Instruct-hf` (1 agent - code execution)
 
 ### Tasks
 

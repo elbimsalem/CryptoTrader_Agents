@@ -13,7 +13,7 @@ class IonosLLMFactory:
     Based on actual available models from IONOS Cloud API
     """
     
-    # Available IONOS models with their capabilities
+    # Available IONOS models with their capabilities (updated from API response)
     AVAILABLE_MODELS = {
         # Large reasoning models - best for complex analysis
         "meta-llama/Meta-Llama-3.1-405B-Instruct-FP8": {
@@ -48,6 +48,13 @@ class IonosLLMFactory:
             "cost": "medium",
             "speed": "medium"
         },
+        # Small efficient models
+        "meta-llama/Meta-Llama-3.1-8B-Instruct": {
+            "context": 128000,
+            "strengths": ["efficient", "fast", "general"],
+            "cost": "very_low",
+            "speed": "very_fast"
+        },
         # Specialized models
         "meta-llama/CodeLlama-13b-Instruct-hf": {
             "context": 16000,
@@ -55,11 +62,33 @@ class IonosLLMFactory:
             "cost": "low",
             "speed": "fast"
         },
-        "meta-llama/Meta-Llama-3.1-8B-Instruct": {
-            "context": 128000,
-            "strengths": ["efficient", "fast", "general"],
+        "openGPT-X/Teuken-7B-instruct-commercial": {
+            "context": 8192,
+            "strengths": ["german", "multilingual", "commercial"],
+            "cost": "low",
+            "speed": "fast"
+        },
+        # Embedding models (for reference, not used for chat)
+        "BAAI/bge-m3": {
+            "context": 8192,
+            "strengths": ["embeddings", "multilingual"],
             "cost": "very_low",
-            "speed": "very_fast"
+            "speed": "very_fast",
+            "type": "embedding"
+        },
+        "BAAI/bge-large-en-v1.5": {
+            "context": 512,
+            "strengths": ["embeddings", "english"],
+            "cost": "very_low", 
+            "speed": "very_fast",
+            "type": "embedding"
+        },
+        "sentence-transformers/paraphrase-multilingual-mpnet-base-v2": {
+            "context": 512,
+            "strengths": ["embeddings", "multilingual", "paraphrasing"],
+            "cost": "very_low",
+            "speed": "very_fast", 
+            "type": "embedding"
         }
     }
     
@@ -78,8 +107,13 @@ class IonosLLMFactory:
         if model not in self.AVAILABLE_MODELS:
             raise ValueError(f"Model {model} not available in IONOS Cloud")
         
+        # Check if model is suitable for chat (exclude embedding models)
+        model_info = self.AVAILABLE_MODELS[model]
+        if model_info.get("type") == "embedding":
+            raise ValueError(f"Model {model} is an embedding model, not suitable for chat")
+        
         config = {
-            "model": f"openai/{model}",  # Specify openai provider for litellm
+            "model": f"openai/{model}",  # Use openai prefix as per working remote config
             "openai_api_key": self.api_key,
             "openai_api_base": self.base_url,
             "temperature": temperature,
@@ -118,7 +152,7 @@ class IonosLLMFactory:
     def get_news_researcher_llm(self) -> ChatOpenAI:
         """Large model for complex sentiment analysis"""
         return self.create_llm(
-            model="meta-llama/Meta-Llama-3.1-405B-Instruct-FP8",
+            model="meta-llama/Llama-3.1-405B-Instruct-FP8",
             temperature=0.1,  # Slight creativity for sentiment interpretation
             max_tokens=4000
         )
