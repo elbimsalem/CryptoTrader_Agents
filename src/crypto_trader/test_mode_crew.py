@@ -7,7 +7,7 @@ import yaml
 from typing import Dict, List, Optional, Any
 from datetime import datetime, timedelta
 from crewai import Agent, Task, Crew, Process
-from crewai.project import CrewBase, agent, crew, task
+# Remove CrewBase inheritance since we'll create crew manually
 
 # Import base autonomous crew
 from .autonomous_crew import AutonomousCryptoTradingCrew, AutonomousToolManager
@@ -57,18 +57,13 @@ class TestModeToolManager:
         """Get Serper tool from base manager"""
         return self.base_tool_manager.get_serper_tool()
 
-@CrewBase
 class TestModeCryptoTradingCrew():
     """
     Extended crew for autonomous crypto trading with portfolio simulation
     and comprehensive reporting capabilities
     """
     
-    agents_config = 'config/enhanced_agents.yaml'
-    tasks_config = 'config/autonomous_tasks.yaml'
-    
     def __init__(self, initial_balance: float = 10000.0, verbose: bool = False):
-        super().__init__()
         self.verbose = verbose
         
         # Initialize portfolio simulator
@@ -77,11 +72,11 @@ class TestModeCryptoTradingCrew():
         # Initialize tool manager
         self.tool_manager = TestModeToolManager(self.portfolio_simulator)
         
-        # Load configurations
-        self._load_configs()
-        
         # Initialize base autonomous crew
         self.base_crew = AutonomousCryptoTradingCrew(verbose=verbose)
+        
+        # Load test mode configurations
+        self._load_configs()
         
         logger.info(f"TestModeCryptoTradingCrew initialized with ${initial_balance:,.2f} starting balance")
     
@@ -107,7 +102,6 @@ class TestModeCryptoTradingCrew():
             self.test_tasks_data = {}
     
     # Test Mode Agents
-    @agent
     def portfolio_simulator_agent(self) -> Agent:
         """Virtual Portfolio Manager & Trade Simulator"""
         return Agent(
@@ -121,7 +115,6 @@ class TestModeCryptoTradingCrew():
             verbose=self.verbose
         )
     
-    @agent  
     def daily_reporter_agent(self) -> Agent:
         """Performance Analyst & Report Generator"""
         return Agent(
@@ -135,7 +128,6 @@ class TestModeCryptoTradingCrew():
             verbose=self.verbose
         )
     
-    @agent
     def trade_logger_agent(self) -> Agent:
         """Trade Execution Logger & Audit Specialist"""
         return Agent(
@@ -149,7 +141,6 @@ class TestModeCryptoTradingCrew():
             verbose=self.verbose
         )
     
-    @agent
     def market_benchmark_agent(self) -> Agent:
         """Market Benchmark & Comparison Analyst"""
         return Agent(
@@ -164,7 +155,6 @@ class TestModeCryptoTradingCrew():
         )
     
     # Test Mode Tasks
-    @task
     def execute_virtual_trades_task(self) -> Task:
         """Execute virtual trades based on crew recommendations"""
         return Task(
@@ -176,7 +166,6 @@ class TestModeCryptoTradingCrew():
             context=[self.base_crew.coordinate_autonomous_trading_task()]
         )
     
-    @task
     def log_trading_actions_task(self) -> Task:
         """Log all trading decisions and actions"""
         return Task(
@@ -191,7 +180,6 @@ class TestModeCryptoTradingCrew():
             ]
         )
     
-    @task
     def generate_daily_report_task(self) -> Task:
         """Generate daily performance report"""
         return Task(
@@ -206,7 +194,6 @@ class TestModeCryptoTradingCrew():
             ]
         )
     
-    @task
     def benchmark_performance_task(self) -> Task:
         """Compare performance against market benchmarks"""
         return Task(
@@ -218,7 +205,6 @@ class TestModeCryptoTradingCrew():
             context=[self.generate_daily_report_task()]
         )
     
-    @crew
     def crew(self) -> Crew:
         """Create the complete test mode crew"""
         try:
