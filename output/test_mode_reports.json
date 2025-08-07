@@ -1,0 +1,35 @@
+[
+  {
+    "date": "2025-08-07",
+    "starting_balance": 10000.0,
+    "ending_balance": 10042.4,
+    "daily_pnl": 42.399999999999636,
+    "daily_pnl_pct": 0.4239999999999963,
+    "total_pnl": 42.399999999999636,
+    "total_pnl_pct": 0.4239999999999963,
+    "positions_count": 1,
+    "trades_count": 1,
+    "top_performer": "BTCUSDT (+2.22%)",
+    "worst_performer": "BTCUSDT (2.22%)",
+    "key_actions": [
+      "BUY 0.0444 BTCUSDT @ $45000.0000"
+    ]
+  },
+  {
+    "date": "2025-08-07",
+    "starting_balance": 10042.4,
+    "ending_balance": 10084.8,
+    "daily_pnl": 42.399999999999636,
+    "daily_pnl_pct": 0.422209830319442,
+    "total_pnl": 84.79999999999927,
+    "total_pnl_pct": 0.8479999999999926,
+    "positions_count": 1,
+    "trades_count": 2,
+    "top_performer": "BTCUSDT (+2.22%)",
+    "worst_performer": "BTCUSDT (2.22%)",
+    "key_actions": [
+      "BUY 0.0444 BTCUSDT @ $45000.0000",
+      "BUY 0.0444 BTCUSDT @ $45000.0000"
+    ]
+  }
+]

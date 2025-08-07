@@ -92,10 +92,13 @@ class PortfolioSimulator:
         self.last_report_date = None
         self.daily_snapshots = {}
         
-        # File paths for persistence
-        self.portfolio_file = "test_mode_portfolio.json"
-        self.trades_file = "test_mode_trades.json"
-        self.reports_file = "test_mode_reports.json"
+        # Ensure output directory exists
+        os.makedirs('output', exist_ok=True)
+        
+        # File paths for persistence in output folder
+        self.portfolio_file = os.path.join('output', "test_mode_portfolio.json")
+        self.trades_file = os.path.join('output', "test_mode_trades.json")
+        self.reports_file = os.path.join('output', "test_mode_reports.json")
         
         # Load existing data if available
         self._load_portfolio_state()
@@ -303,7 +306,7 @@ class PortfolioSimulator:
         """Get available USD balance for trading"""
         return self.current_balance
     
-    def generate_daily_report(self, current_prices: Dict[str, float]) -> DailyReport:
+    def generate_daily_report(self, current_prices: Dict[str, float], save_markdown: bool = True) -> DailyReport:
         """Generate daily performance report"""
         try:
             today = datetime.now().date()
@@ -370,6 +373,10 @@ class PortfolioSimulator:
             self.daily_reports.append(report)
             self.last_report_date = today
             self._save_portfolio_state()
+            
+            # Save markdown report if requested
+            if save_markdown:
+                self._save_markdown_report(report, current_prices)
             
             return report
             
@@ -439,3 +446,147 @@ class PortfolioSimulator:
     def get_latest_report(self) -> Optional[DailyReport]:
         """Get the most recent daily report"""
         return self.daily_reports[-1] if self.daily_reports else None
+    
+    def _save_markdown_report(self, report: DailyReport, current_prices: Dict[str, float]):
+        """Save daily report as markdown file in output folder"""
+        try:
+            import os
+            
+            # Ensure output directory exists
+            output_dir = "output"
+            os.makedirs(output_dir, exist_ok=True)
+            
+            # Create filename
+            report_date = datetime.fromisoformat(report.date).strftime('%Y%m%d')
+            filename = f"daily_report_{report_date}.md"
+            filepath = os.path.join(output_dir, filename)
+            
+            # Generate markdown content
+            markdown_content = self._generate_markdown_content(report, current_prices)
+            
+            # Write to file
+            with open(filepath, 'w', encoding='utf-8') as f:
+                f.write(markdown_content)
+            
+            logger.info(f"📋 Markdown report saved: {filepath}")
+            
+        except Exception as e:
+            logger.error(f"Failed to save markdown report: {e}")
+    
+    def _generate_markdown_content(self, report: DailyReport, current_prices: Dict[str, float]) -> str:
+        """Generate markdown content for daily report"""
+        report_date = datetime.fromisoformat(report.date)
+        
+        # Performance indicators
+        daily_trend = "📈" if report.daily_pnl >= 0 else "📉"
+        total_trend = "🟢" if report.total_pnl >= 0 else "🔴"
+        
+        markdown = f"""# 📊 Daily Trading Report - {report_date.strftime('%B %d, %Y')}
+
+## 💰 Portfolio Performance
+
+| Metric | Value | Change |
+|--------|--------|--------|
+| **Portfolio Value** | ${report.ending_balance:,.2f} | {daily_trend} ${report.daily_pnl:+,.2f} ({report.daily_pnl_pct:+.2f}%) |
+| **Total P&L** | ${report.total_pnl:+,.2f} | {total_trend} {report.total_pnl_pct:+.2f}% |
+| **Cash Balance** | ${self.current_balance:,.2f} | Available for trading |
+| **Active Positions** | {report.positions_count} | Currently held |
+
+## 📈 Position Summary
+
+"""
+        
+        if self.positions:
+            markdown += "| Symbol | Quantity | Current Value | Unrealized P&L | P&L % |\n"
+            markdown += "|--------|----------|---------------|----------------|-------|\n"
+            
+            for symbol, position in self.positions.items():
+                current_price = current_prices.get(symbol, position.avg_price)
+                current_value = position.quantity * current_price
+                unrealized_pnl = current_value - position.total_cost
+                unrealized_pnl_pct = (unrealized_pnl / position.total_cost * 100) if position.total_cost > 0 else 0
+                
+                trend_icon = "🟢" if unrealized_pnl >= 0 else "🔴"
+                markdown += f"| **{symbol}** | {position.quantity:.6f} | ${current_value:,.2f} | {trend_icon} ${unrealized_pnl:+,.2f} | {unrealized_pnl_pct:+.2f}% |\n"
+        else:
+            markdown += "*No active positions*\n"
+        
+        markdown += f"""
+
+## ⚡ Trading Activity
+
+**Trades Today:** {report.trades_count}
+
+### Key Actions:
+"""
+        
+        for action in report.key_actions:
+            markdown += f"- {action}\n"
+        
+        markdown += f"""
+
+## 🎯 Performance Highlights
+
+- **{report.top_performer or 'No positions'}** - Top Performer
+- **{report.worst_performer or 'No positions'}** - Needs Attention
+
+## 📊 Portfolio Allocation
+
+"""
+        
+        if self.positions:
+            total_portfolio = report.ending_balance
+            markdown += "| Asset | Allocation | Value |\n"
+            markdown += "|-------|------------|-------|\n"
+            
+            # Cash allocation
+            cash_pct = (self.current_balance / total_portfolio * 100) if total_portfolio > 0 else 0
+            markdown += f"| **Cash (USD)** | {cash_pct:.1f}% | ${self.current_balance:,.2f} |\n"
+            
+            # Position allocations
+            for symbol, position in self.positions.items():
+                current_price = current_prices.get(symbol, position.avg_price)
+                position_value = position.quantity * current_price
+                allocation_pct = (position_value / total_portfolio * 100) if total_portfolio > 0 else 0
+                markdown += f"| **{symbol}** | {allocation_pct:.1f}% | ${position_value:,.2f} |\n"
+        
+        markdown += f"""
+
+## 📈 Historical Performance
+
+- **Simulation Started:** {self.start_date.strftime('%B %d, %Y')}
+- **Days Running:** {(datetime.now().date() - self.start_date).days + 1}
+- **Total Trades:** {len(self.trades)}
+- **Initial Balance:** ${self.initial_balance:,.2f}
+
+## 🎯 Next Actions
+
+Based on today's performance:
+
+"""
+        
+        # Add actionable insights
+        if report.daily_pnl > 0:
+            markdown += "- ✅ **Strong Performance** - Consider taking partial profits on outperforming positions\n"
+        else:
+            markdown += "- ⚠️ **Portfolio Decline** - Review positions and consider risk management actions\n"
+            
+        if report.positions_count >= 5:
+            markdown += "- 📊 **Portfolio Full** - Focus on optimizing existing positions\n"
+        elif report.positions_count == 0:
+            markdown += "- 🔍 **No Positions** - Look for new trading opportunities\n"
+        else:
+            markdown += "- 💡 **Room to Grow** - Consider additional diversification opportunities\n"
+            
+        if self.current_balance / report.ending_balance > 0.5:
+            markdown += "- 💰 **High Cash Allocation** - Consider deploying capital for potential opportunities\n"
+        elif self.current_balance / report.ending_balance < 0.1:
+            markdown += "- ⚡ **Low Cash Buffer** - Maintain liquidity for risk management\n"
+        
+        markdown += f"""
+
+---
+*Report generated on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} | Test Mode Simulation*
+"""
+        
+        return markdown

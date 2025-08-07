@@ -1,0 +1,17 @@
+{
+  "current_balance": 6000.0,
+  "initial_balance": 10000.0,
+  "start_date": "2025-08-07",
+  "positions": {
+    "BTCUSDT": {
+      "symbol": "BTCUSDT",
+      "quantity": 0.0888,
+      "avg_price": 45000.0,
+      "total_cost": 3996.0,
+      "current_price": 46000,
+      "current_value": 4084.8,
+      "unrealized_pnl": 88.80000000000018,
+      "unrealized_pnl_pct": 2.2222222222222268
+    }
+  }
+}

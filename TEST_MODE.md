@@ -227,17 +227,17 @@ Test Mode uses the intelligent scheduler to optimize token usage:
 
 ## 📋 **Generated Files**
 
-Test Mode creates comprehensive documentation:
+Test Mode creates comprehensive documentation in the **`output/`** folder:
 
 ### **Real-time Files**
-- **`test_mode.log`** - Complete execution log
-- **`test_mode_portfolio.json`** - Current portfolio state
-- **`test_mode_trades.json`** - All trade executions
-- **`test_mode_reports.json`** - Daily performance reports
+- **`output/test_mode.log`** - Complete execution log
+- **`output/test_mode_portfolio.json`** - Current portfolio state
+- **`output/test_mode_trades.json`** - All trade executions
+- **`output/test_mode_reports.json`** - Daily performance reports
 
-### **Final Reports**
-- **`test_simulation_final_report_YYYYMMDD_HHMMSS.json`** - Complete simulation summary
-- **Daily markdown reports** - Human-readable performance summaries
+### **Daily Reports**
+- **`output/daily_report_YYYYMMDD.md`** - Beautiful markdown daily reports
+- **`output/test_simulation_final_report_YYYYMMDD_HHMMSS.json`** - Complete simulation summary
 
 ---
 

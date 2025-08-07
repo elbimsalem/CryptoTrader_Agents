@@ -16,11 +16,12 @@ from .portfolio_simulator import PortfolioSimulator, DailyReport
 from .smart_scheduler import SmartScheduler, ScheduleConfig, AnalysisLevel
 
 # Configure logging
+os.makedirs('output', exist_ok=True)
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('test_mode.log'),
+        logging.FileHandler(os.path.join('output', 'test_mode.log')),
         logging.StreamHandler(sys.stdout)
     ]
 )
@@ -269,9 +270,14 @@ class TestModeScheduler(SmartScheduler):
                 }
             }
             
-            # Save final report
+            # Ensure output directory exists
+            output_dir = "output"
+            os.makedirs(output_dir, exist_ok=True)
+            
+            # Save final report in output folder
             report_filename = f"test_simulation_final_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-            with open(report_filename, 'w') as f:
+            report_filepath = os.path.join(output_dir, report_filename)
+            with open(report_filepath, 'w') as f:
                 json.dump(final_report, f, indent=2, default=str)
             
             logger.info("🎉 FINAL SIMULATION REPORT:")
@@ -281,7 +287,7 @@ class TestModeScheduler(SmartScheduler):
             logger.info(f"   📊 Annualized: {annualized_return:+.2f}%")
             logger.info(f"   📅 Duration: {days_running} days")
             logger.info(f"   📈 Total Trades: {simulation_stats['total_trades']}")
-            logger.info(f"   📋 Report saved: {report_filename}")
+            logger.info(f"   📋 Report saved: {report_filepath}")
             
         except Exception as e:
             logger.error(f"Failed to generate final report: {e}")
