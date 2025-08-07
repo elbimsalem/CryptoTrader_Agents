@@ -1,0 +1,196 @@
+# Test Mode Tasks Configuration
+# Additional tasks for portfolio simulation and performance tracking
+
+execute_virtual_trades:
+  agent: portfolio_simulator
+  description: >
+    Execute virtual trades based on the autonomous trading crew's recommendations.
+    
+    Using the Portfolio Simulator, execute the recommended trades from the strategy
+    coordinator while maintaining realistic trading constraints:
+    
+    1. Review trading recommendations from strategy coordination
+    2. Check available balance and position limits
+    3. Calculate appropriate position sizes based on risk management
+    4. Execute virtual buy/sell orders with realistic fees (0.1%)
+    5. Update portfolio positions and track performance
+    6. Log all trade executions with timestamps and reasoning
+    
+    Trading constraints:
+    - Maximum 30% allocation per asset
+    - Minimum $100 position size
+    - Maximum 5 concurrent positions
+    - 0.1% trading fee simulation
+    - Realistic price slippage consideration
+    
+    Current portfolio context: Use current balance and positions from simulator
+    
+    CRITICAL EXECUTION REQUIREMENTS:
+    - Execute only recommended trades with proper validation
+    - Maintain accurate balance and position tracking
+    - Apply risk management constraints consistently
+    - Log detailed execution information for audit trail
+    - Update portfolio state after each trade
+  context:
+    - coordinate_autonomous_trading_task
+  expected_output: >
+    Virtual trade execution report containing:
+    1. Executed Trades (symbol, side, quantity, price, timestamp)
+    2. Updated Portfolio Positions (current holdings and values)
+    3. Available Balance (remaining cash for trading)
+    4. Trade Execution Summary (successful/failed trades)
+    5. Risk Constraint Status (position limits, allocation percentages)
+    6. Performance Impact (immediate P&L effect)
+    7. Next Trading Recommendations (based on current portfolio state)
+
+log_trading_actions:
+  agent: trade_logger
+  description: >
+    Maintain comprehensive logs of all trading decisions, market conditions,
+    and portfolio changes for analysis and audit purposes.
+    
+    Document complete trading session including:
+    
+    1. Market Analysis Results (from autonomous crew analysis)
+    2. Trading Decisions Made (buy/sell/hold with reasoning)
+    3. Risk Assessment Outcomes (position sizes, risk metrics)
+    4. Market Conditions (prices, volatility, volume at decision time)
+    5. Portfolio State Changes (before/after positions and balances)
+    6. Performance Metrics (unrealized P&L, allocation percentages)
+    
+    Logging requirements:
+    - Timestamp all activities with millisecond precision
+    - Record decision reasoning and confidence levels
+    - Track market data used for decisions
+    - Document risk management rule applications
+    - Maintain audit trail for compliance
+    
+    Context integration:
+    - Use market analysis from autonomous crew
+    - Reference trade executions from portfolio simulator
+    - Include strategy coordination decisions
+    
+    Current session: '{current_datetime}'
+  context:
+    - execute_virtual_trades
+    - coordinate_autonomous_trading_task
+  expected_output: >
+    Comprehensive trading session log containing:
+    1. Session Summary (date, duration, market conditions)
+    2. Decision Log (each decision with timestamp and reasoning)
+    3. Market Data Snapshot (prices, volumes, volatility at decision points)
+    4. Trade Execution Log (all executed trades with details)
+    5. Portfolio State Changes (position and balance modifications)
+    6. Risk Management Actions (constraints applied, limits checked)
+    7. Performance Tracking (session P&L, running totals)
+    8. Audit Trail (complete chronological record)
+
+generate_daily_report:
+  agent: daily_reporter
+  description: >
+    Generate comprehensive daily performance report with insights, trends,
+    and recommendations based on test mode trading simulation results.
+    
+    Create detailed daily analysis including:
+    
+    1. Daily Performance Summary
+       - Starting vs ending portfolio value
+       - Daily profit/loss in USD and percentage
+       - Cumulative performance since inception
+       - Number of trades executed today
+    
+    2. Portfolio Analysis
+       - Current positions and their performance
+       - Best and worst performing assets
+       - Portfolio allocation breakdown
+       - Risk metrics (volatility, drawdown)
+    
+    3. Trading Activity Review
+       - Trades executed with entry/exit analysis
+       - Success rate and average trade performance
+       - Market timing effectiveness
+       - Risk management adherence
+    
+    4. Market Context
+       - Major market movements affecting portfolio
+       - Correlation with benchmark performance
+       - Volatility and volume analysis
+       - Market regime assessment
+    
+    5. Strategic Recommendations
+       - Portfolio optimization suggestions
+       - Risk management improvements
+       - Strategy refinement recommendations
+       - Next day trading focus areas
+    
+    Report format: Professional, concise, actionable
+    Target audience: Portfolio performance review
+    
+    Data timeframe: Last 24 hours with cumulative context
+  context:
+    - log_trading_actions
+    - execute_virtual_trades
+  expected_output: >
+    Professional daily performance report containing:
+    1. Executive Summary (key performance metrics and highlights)
+    2. Daily Performance Analysis (P&L, returns, comparison metrics)
+    3. Portfolio Composition Review (holdings, allocation, performance)
+    4. Trading Activity Assessment (execution quality, decision analysis)
+    5. Market Impact Analysis (external factors, correlation effects)
+    6. Risk Management Review (constraint adherence, exposure analysis)
+    7. Strategic Recommendations (optimization opportunities, next steps)
+    8. Performance Trends (charts recommendations, key metrics evolution)
+
+benchmark_performance:
+  agent: market_benchmark
+  description: >
+    Track market benchmarks and provide performance comparison analysis
+    to evaluate trading strategy effectiveness against market indices.
+    
+    Benchmark analysis scope:
+    
+    1. Market Index Tracking
+       - Bitcoin (BTC) performance as crypto market leader
+       - Ethereum (ETH) as major altcoin benchmark
+       - Top 10 crypto market cap weighted index
+       - Equal-weighted portfolio of selected assets
+    
+    2. Performance Comparison
+       - Daily return comparison (strategy vs benchmarks)
+       - Cumulative return analysis since inception
+       - Risk-adjusted return metrics (Sharpe ratio)
+       - Maximum drawdown comparison
+       - Volatility analysis (annualized standard deviation)
+    
+    3. Risk Analysis
+       - Beta calculation against major crypto indices
+       - Correlation analysis with Bitcoin and Ethereum
+       - Portfolio diversification effectiveness
+       - Value at Risk (VaR) estimation
+    
+    4. Strategy Effectiveness
+       - Alpha generation analysis (excess returns)
+       - Information ratio calculation
+       - Win rate vs market timing
+       - Downside protection effectiveness
+    
+    5. Market Regime Analysis
+       - Performance in different market conditions
+       - Bull/bear market adaptation
+       - High/low volatility performance
+       - Volume-based regime analysis
+    
+    Comparison period: Aligned with portfolio inception date
+    Update frequency: Daily with running calculations
+  context:
+    - generate_daily_report
+  expected_output: >
+    Benchmark comparison report containing:
+    1. Performance Comparison Matrix (strategy vs benchmarks)
+    2. Risk-Adjusted Returns Analysis (Sharpe, Sortino, Information ratios)
+    3. Market Correlation Analysis (beta, correlation coefficients)
+    4. Drawdown Comparison (maximum, average, recovery time)
+    5. Strategy Attribution (alpha generation, factor exposure)
+    6. Market Regime Performance (bull/bear, high/low volatility)
+    7. Effectiveness Assessment (outperformance analysis, consistency)
+    8. Strategic Insights (benchmark-relative opportunities)
