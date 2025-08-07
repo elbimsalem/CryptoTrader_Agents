@@ -51,7 +51,7 @@ select_trading_assets:
     
     Current context: '{current_datetime}'
   context:
-    - scan_market_opportunities
+    - scan_market_opportunities_task
   expected_output: >
     Asset selection report containing:
     1. Selected assets (3-5 symbols) with allocation percentages
@@ -86,7 +86,7 @@ fetch_comprehensive_market_data:
     Target assets: Use selected assets from asset selection
     Current analysis time: '{current_datetime}'
   context:
-    - select_trading_assets
+    - select_trading_assets_task
   expected_output: >
     Comprehensive market data report for each selected asset including:
     1. Current market state (price, volume, spread)
@@ -123,7 +123,7 @@ research_market_intelligence:
     
     Current intelligence gathering time: '{current_datetime}'
   context:
-    - select_trading_assets
+    - select_trading_assets_task
   expected_output: >
     Market intelligence report for each selected asset:
     1. News Summary (impact-rated developments)
@@ -161,8 +161,8 @@ perform_advanced_analysis:
     - Account for broader market conditions and Bitcoin influence
     - Consider portfolio construction and diversification effects
   context:
-    - fetch_comprehensive_market_data
-    - research_market_intelligence
+    - fetch_comprehensive_market_data_task
+    - research_market_intelligence_task
   expected_output: >
     Advanced analysis report for each selected asset:
     1. Overall Trade Assessment (Strong Buy/Buy/Hold/Sell/Strong Sell)
@@ -201,8 +201,8 @@ assess_portfolio_risk:
     - Volatility-adjusted position sizing
     - Maximum daily loss limits
   context:
-    - perform_advanced_analysis
-    - select_trading_assets
+    - perform_advanced_analysis_task
+    - select_trading_assets_task
   expected_output: >
     Portfolio risk management plan:
     1. Individual Position Sizes ($ amount and % of portfolio)
@@ -239,8 +239,8 @@ optimize_portfolio_allocation:
     - Loss-cutting procedures
     - New opportunity integration process
   context:
-    - assess_portfolio_risk
-    - perform_advanced_analysis
+    - assess_portfolio_risk_task
+    - perform_advanced_analysis_task
   expected_output: >
     Optimized portfolio allocation plan:
     1. Final Asset Allocations (symbols, percentages, dollar amounts)
@@ -289,8 +289,8 @@ execute_trading_strategy:
     - Maintain detailed execution logs
     - Provide clear confirmation of all trades
   context:
-    - optimize_portfolio_allocation
-    - assess_portfolio_risk
+    - optimize_portfolio_allocation_task
+    - assess_portfolio_risk_task
   expected_output: >
     Trade execution report:
     1. Execution Summary (orders placed, fills received)
@@ -338,7 +338,7 @@ monitor_performance:
     - Risk metric evolution
     - Recommendation for strategy adjustments
   context:
-    - execute_trading_strategy
+    - execute_trading_strategy_task
   expected_output: >
     Performance monitoring report:
     1. Current Portfolio Status (positions, values, P&L)
@@ -385,9 +385,9 @@ coordinate_autonomous_trading:
     - Risk limit adjustments
     - Strategy parameter changes
   context:
-    - monitor_performance
-    - execute_trading_strategy
-    - optimize_portfolio_allocation
+    - monitor_performance_task
+    - execute_trading_strategy_task
+    - optimize_portfolio_allocation_task
   expected_output: >
     Strategic coordination summary:
     1. Final Strategy Decisions (assets, allocations, timing)

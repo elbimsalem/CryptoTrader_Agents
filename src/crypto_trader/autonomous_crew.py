@@ -12,18 +12,18 @@ from .tools.binance_direct_tool import BinanceDirectTool
 from crewai_tools import SerperDevTool, ScrapeWebsiteTool
 
 # Import IONOS LLM configurations
-from .ionos_llm import (
-    get_market_scanner_llm,
-    get_asset_selector_llm,
-    get_market_data_analyst_llm,
-    get_news_researcher_llm,
-    get_crypto_analyst_llm,
-    get_risk_manager_llm,
-    get_portfolio_manager_llm,
-    get_trade_executor_llm,
-    get_performance_monitor_llm,
-    get_strategy_coordinator_llm
-)
+from langchain_openai import ChatOpenAI
+import os
+
+def get_ionos_llm():
+    """Get IONOS LLM configuration directly"""
+    return ChatOpenAI(
+        model="mistralai/Mixtral-8x7B-Instruct-v0.1",
+        openai_api_key=os.getenv("OPENAI_API_KEY"),
+        openai_api_base=os.getenv("IONOS_BASE_URL", "https://openai.inference.de-txl.ionos.com/v1"),
+        temperature=0.1,
+        max_tokens=4000
+    )
 
 # Configure logging
 logger = logging.getLogger("crypto_trader.autonomous_crew")
@@ -104,7 +104,7 @@ class AutonomousCryptoTradingCrew:
         return Agent(
             config=self.agents_config['market_scanner'],
             tools=[self.tool_manager.get_binance_direct_tool()],
-            llm=get_market_scanner_llm(),
+            llm=get_ionos_llm(),
             verbose=self.verbose
         )
     
@@ -113,7 +113,7 @@ class AutonomousCryptoTradingCrew:
         """Agent that selects optimal assets for trading"""
         return Agent(
             config=self.agents_config['asset_selector'],
-            llm=get_asset_selector_llm(),
+            llm=get_ionos_llm(),
             verbose=self.verbose
         )
     
@@ -123,7 +123,7 @@ class AutonomousCryptoTradingCrew:
         return Agent(
             config=self.agents_config['market_data_analyst'],
             tools=[self.tool_manager.get_binance_direct_tool()],
-            llm=get_market_data_analyst_llm(),
+            llm=get_ionos_llm(),
             verbose=self.verbose
         )
     
@@ -136,7 +136,7 @@ class AutonomousCryptoTradingCrew:
                 self.tool_manager.get_serper_tool(),
                 self.tool_manager.get_scrape_tool()
             ],
-            llm=get_news_researcher_llm(),
+            llm=get_ionos_llm(),
             verbose=self.verbose
         )
     
@@ -145,7 +145,7 @@ class AutonomousCryptoTradingCrew:
         """Enhanced crypto analyst for comprehensive analysis"""
         return Agent(
             config=self.agents_config['crypto_analyst'],
-            llm=get_crypto_analyst_llm(),
+            llm=get_ionos_llm(),
             verbose=self.verbose
         )
     
@@ -155,7 +155,7 @@ class AutonomousCryptoTradingCrew:
         """Risk management specialist"""
         return Agent(
             config=self.agents_config['risk_manager'],
-            llm=get_risk_manager_llm(),
+            llm=get_ionos_llm(),
             verbose=self.verbose
         )
     
@@ -164,7 +164,7 @@ class AutonomousCryptoTradingCrew:
         """Multi-asset portfolio manager"""
         return Agent(
             config=self.agents_config['portfolio_manager'],
-            llm=get_portfolio_manager_llm(),
+            llm=get_ionos_llm(),
             verbose=self.verbose
         )
     
@@ -175,7 +175,7 @@ class AutonomousCryptoTradingCrew:
         return Agent(
             config=self.agents_config['trade_executor'],
             tools=[self.tool_manager.get_binance_direct_tool()],
-            llm=get_trade_executor_llm(),
+            llm=get_ionos_llm(),
             verbose=self.verbose
         )
     
@@ -184,7 +184,7 @@ class AutonomousCryptoTradingCrew:
         """Performance monitoring and optimization"""
         return Agent(
             config=self.agents_config['performance_monitor'],
-            llm=get_performance_monitor_llm(),
+            llm=get_ionos_llm(),
             verbose=self.verbose
         )
     
@@ -193,7 +193,7 @@ class AutonomousCryptoTradingCrew:
         """Master strategy coordinator"""
         return Agent(
             config=self.agents_config['strategy_coordinator'],
-            llm=get_strategy_coordinator_llm(),
+            llm=get_ionos_llm(),
             verbose=self.verbose
         )
 

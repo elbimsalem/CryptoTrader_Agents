@@ -79,7 +79,7 @@ class IonosLLMFactory:
             raise ValueError(f"Model {model} not available in IONOS Cloud")
         
         config = {
-            "model": model,
+            "model": f"openai/{model}",  # Specify openai provider for litellm
             "openai_api_key": self.api_key,
             "openai_api_base": self.base_url,
             "temperature": temperature,

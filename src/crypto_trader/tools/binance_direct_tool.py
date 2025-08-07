@@ -25,16 +25,22 @@ class BinanceDirectTool(BaseTool):
         "'get_account_info', 'get_open_orders', 'place_order', 'cancel_order', 'get_top_symbols'"
     )
     
+    # Define fields as model fields for Pydantic compatibility
+    api_key: Optional[str] = Field(default=None)
+    api_secret: Optional[str] = Field(default=None)
+    base_url: str = Field(default="https://api.binance.com")
+    
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        # Initialize with API credentials from environment
         load_dotenv()
         
-        self.api_key = os.getenv("BINANCE_API_KEY")
-        self.api_secret = os.getenv("BINANCE_API_SECRET")
-        self.base_url = "https://api.binance.com"
+        # Set default values from environment
+        if 'api_key' not in kwargs:
+            kwargs['api_key'] = os.getenv("BINANCE_API_KEY")
+        if 'api_secret' not in kwargs:
+            kwargs['api_secret'] = os.getenv("BINANCE_API_SECRET")
         
-        # For spot trading testnet (uncomment for testing)
-        # self.base_url = "https://testnet.binance.vision"
+        super().__init__(**kwargs)
         
         if not self.api_key or not self.api_secret:
             print("Warning: Binance API credentials not found. Only public endpoints will work.")
