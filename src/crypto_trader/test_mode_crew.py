@@ -21,13 +21,48 @@ from langchain_openai import ChatOpenAI
 import os
 
 def get_test_mode_llm():
-    """Get LLM configuration for test mode agents"""
+    """Get LLM configuration for test mode agents with fallback options"""
+    ionos_api_key = os.getenv("OPENAI_API_KEY")
+    ionos_base_url = os.getenv("IONOS_BASE_URL", "https://openai.inference.de-txl.ionos.com/v1")
+    
+    # Try IONOS first
+    if ionos_api_key and ionos_base_url:
+        try:
+            return ChatOpenAI(
+                model="openai/meta-llama/Meta-Llama-3.1-8B-Instruct",
+                openai_api_key=ionos_api_key,
+                openai_api_base=ionos_base_url,
+                temperature=0.1,
+                max_tokens=3000,
+                timeout=60,
+                max_retries=2
+            )
+        except Exception as e:
+            logger.warning(f"Failed to initialize IONOS LLM: {e}")
+    
+    # Fallback to standard OpenAI if available
+    openai_key = os.getenv("OPENAI_API_KEY_FALLBACK") or os.getenv("OPENAI_KEY")
+    if openai_key:
+        logger.info("Using OpenAI as fallback LLM provider")
+        return ChatOpenAI(
+            model="gpt-3.5-turbo",
+            openai_api_key=openai_key,
+            temperature=0.1,
+            max_tokens=3000,
+            timeout=60,
+            max_retries=2
+        )
+    
+    # Default to IONOS (will fail if connection issues persist)
+    logger.warning("No fallback LLM available, using IONOS (may fail if connection issues)")
     return ChatOpenAI(
         model="openai/meta-llama/Meta-Llama-3.1-8B-Instruct",
-        openai_api_key=os.getenv("OPENAI_API_KEY"),
-        openai_api_base=os.getenv("IONOS_BASE_URL", "https://openai.inference.de-txl.ionos.com/v1"),
+        openai_api_key=ionos_api_key or "dummy",
+        openai_api_base=ionos_base_url,
         temperature=0.1,
-        max_tokens=3000
+        max_tokens=3000,
+        timeout=60,
+        max_retries=2
     )
 
 # Configure logging

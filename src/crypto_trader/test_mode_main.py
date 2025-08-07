@@ -4,6 +4,7 @@ Combines intelligent scheduling with portfolio simulation for comprehensive test
 """
 import os
 import sys
+import time
 import argparse
 import logging
 import json
@@ -113,8 +114,20 @@ class TestModeScheduler(SmartScheduler):
                 self.analysis_count[level.value.split('_')[0]] += 1
         
         except Exception as e:
-            logger.error(f"Test analysis failed: {e}")
-            result["error"] = str(e)
+            error_msg = str(e)
+            logger.error(f"Test analysis failed: {error_msg}")
+            
+            # Handle specific LLM errors
+            if "Connection error" in error_msg or "InternalServerError" in error_msg:
+                logger.warning("LLM connection failed, skipping this analysis cycle")
+                result.update({
+                    "action": "skipped_llm_error", 
+                    "error": "LLM connection failed",
+                    "tokens_used": 0,
+                    "retry_suggested": True
+                })
+            else:
+                result["error"] = error_msg
         
         # Update last analysis time
         self.last_analysis[level.value] = datetime.now()
@@ -188,9 +201,16 @@ class TestModeScheduler(SmartScheduler):
                 
                 # Log results
                 if analysis_level != AnalysisLevel.MONITOR_ONLY:
-                    logger.info(f"✅ Test analysis complete: {result.get('action')}")
-                    logger.info(f"💰 Portfolio Value: ${result.get('portfolio_summary', {}).get('total_portfolio_value', 0):,.2f}")
-                    logger.info(f"📈 Total P&L: {result.get('portfolio_summary', {}).get('total_pnl_pct', 0):+.2f}%")
+                    action = result.get('action', 'unknown')
+                    if action == 'skipped_llm_error':
+                        logger.warning(f"⚠️ Analysis skipped due to LLM error - will retry next cycle")
+                    elif 'error' in result:
+                        logger.error(f"❌ Analysis failed: {result.get('error')}")
+                    else:
+                        logger.info(f"✅ Test analysis complete: {action}")
+                        logger.info(f"💰 Portfolio Value: ${result.get('portfolio_summary', {}).get('total_portfolio_value', 0):,.2f}")
+                        logger.info(f"📈 Total P&L: {result.get('portfolio_summary', {}).get('total_pnl_pct', 0):+.2f}%")
+                    
                     logger.info(f"🔗 Tokens used: {result.get('tokens_used', 0)} | Daily: {self.token_usage_today:,}/{max_daily_tokens:,}")
                 
                 # Generate detailed report every hour
