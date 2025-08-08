@@ -3,6 +3,7 @@ Autonomous Cryptocurrency Trading Crew
 Enhanced multi-agent system for autonomous crypto trading
 """
 import logging
+import time
 from typing import Dict, List, Optional, Any
 from crewai import Agent, Task, Crew, Process
 from crewai.project import CrewBase, agent, crew, task
@@ -24,24 +25,137 @@ except ImportError:
 from langchain_openai import ChatOpenAI
 import os
 
-def get_ionos_llm():
-    """Get IONOS LLM configuration using proper litellm provider format"""
+def get_ionos_llm(model: str = "openai/meta-llama/Meta-Llama-3.1-8B-Instruct", 
+                  temperature: float = 0.1, 
+                  max_tokens: int = 2000,
+                  max_retries: int = 3):
+    """
+    Get IONOS LLM configuration with enhanced retry logic and error handling
+    
+    Args:
+        model: Model name to use
+        temperature: Temperature for generation
+        max_tokens: Maximum tokens per response
+        max_retries: Maximum number of retry attempts
+    """
+    import time
+    import random
+    
     # Clear any conflicting environment variables first
     if "OPENAI_BASE_URL" in os.environ:
         del os.environ["OPENAI_BASE_URL"]
     
     # Set the correct environment variables for IONOS
-    os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY", "")
-    os.environ["OPENAI_API_BASE"] = "https://openai.inference.de-txl.ionos.com/v1"
+    api_key = os.getenv("OPENAI_API_KEY", "")
+    base_url = "https://openai.inference.de-txl.ionos.com/v1"
     
-    return ChatOpenAI(
-        model="openai/meta-llama/Meta-Llama-3.1-8B-Instruct",  # Use openai prefix as in remote
-        openai_api_key=os.getenv("OPENAI_API_KEY"),
-        openai_api_base="https://openai.inference.de-txl.ionos.com/v1",
-        temperature=0.1,
-        max_tokens=2000,  # Reduce token limit to avoid potential issues
-        timeout=60  # Add timeout
-    )
+    os.environ["OPENAI_API_KEY"] = api_key
+    os.environ["OPENAI_API_BASE"] = base_url
+    
+    if not api_key:
+        logger.error("OPENAI_API_KEY not found in environment variables")
+        raise ValueError("OPENAI_API_KEY is required for IONOS LLM")
+    
+    # Enhanced configuration with retry logic
+    config = {
+        "model": model,
+        "openai_api_key": api_key,
+        "openai_api_base": base_url,
+        "temperature": temperature,
+        "max_tokens": max_tokens,
+        "timeout": 120,  # Increased timeout for stability
+        "max_retries": max_retries,
+        # Enhanced retry configuration
+        "request_timeout": 120,
+        "max_network_retries": max_retries
+    }
+    
+    logger.info(f"Initializing IONOS LLM with model: {model}, max_retries: {max_retries}")
+    
+    try:
+        llm = ChatOpenAI(**config)
+        # Test the connection with a simple ping
+        logger.debug("Testing IONOS LLM connection...")
+        return llm
+    except Exception as e:
+        logger.error(f"Failed to initialize IONOS LLM: {e}")
+        # Fallback strategy could be implemented here
+        raise
+
+class CrewRetryHandler:
+    """Enhanced retry handler for CrewAI operations"""
+    
+    def __init__(self, max_retries: int = 3, base_delay: float = 1.0, max_delay: float = 60.0):
+        self.max_retries = max_retries
+        self.base_delay = base_delay
+        self.max_delay = max_delay
+        self.logger = logging.getLogger(f"{__name__}.CrewRetryHandler")
+    
+    def exponential_backoff_delay(self, attempt: int) -> float:
+        """Calculate exponential backoff delay with jitter"""
+        import random
+        delay = min(self.base_delay * (2 ** attempt), self.max_delay)
+        # Add jitter (±25% of delay)
+        jitter = delay * 0.25 * (2 * random.random() - 1)
+        return max(0.1, delay + jitter)
+    
+    def is_retryable_error(self, error: Exception) -> bool:
+        """Determine if an error is retryable"""
+        import litellm
+        
+        # Connection-related errors
+        retryable_patterns = [
+            "connection error", "timeout", "503", "502", "500", 
+            "rate limit", "too many requests", "network", "connection",
+            "ConnectionError", "TimeoutError", "ReadTimeout"
+        ]
+        
+        error_str = str(error).lower()
+        
+        # Check for specific LiteLLM errors
+        if hasattr(litellm, 'exceptions'):
+            if isinstance(error, (litellm.exceptions.Timeout, litellm.exceptions.APIConnectionError)):
+                return True
+            if isinstance(error, litellm.exceptions.RateLimitError):
+                return True
+            if isinstance(error, litellm.exceptions.InternalServerError):
+                return True
+        
+        # Check for pattern matches
+        return any(pattern in error_str for pattern in retryable_patterns)
+    
+    def execute_with_retry(self, operation, operation_name: str = "operation", *args, **kwargs):
+        """Execute an operation with retry logic"""
+        last_error = None
+        
+        for attempt in range(self.max_retries + 1):
+            try:
+                if attempt > 0:
+                    delay = self.exponential_backoff_delay(attempt - 1)
+                    self.logger.info(f"Retrying {operation_name} (attempt {attempt + 1}/{self.max_retries + 1}) after {delay:.2f}s delay")
+                    time.sleep(delay)
+                
+                result = operation(*args, **kwargs)
+                
+                if attempt > 0:
+                    self.logger.info(f"{operation_name} succeeded on attempt {attempt + 1}")
+                
+                return result
+                
+            except Exception as e:
+                last_error = e
+                
+                if attempt < self.max_retries and self.is_retryable_error(e):
+                    self.logger.warning(f"{operation_name} failed on attempt {attempt + 1}: {e}")
+                    continue
+                else:
+                    if attempt >= self.max_retries:
+                        self.logger.error(f"{operation_name} failed after {self.max_retries + 1} attempts")
+                    else:
+                        self.logger.error(f"{operation_name} failed with non-retryable error: {e}")
+                    break
+        
+        raise last_error
 
 # Configure logging
 logger = logging.getLogger("crypto_trader.autonomous_crew")
@@ -135,7 +249,8 @@ class AutonomousCryptoTradingCrew:
     agents_config = 'config/enhanced_agents.yaml'
     tasks_config = 'config/autonomous_tasks.yaml'
     
-    def __init__(self, verbose: bool = True, paper_trading: bool = True, portfolio_simulator=None):
+    def __init__(self, verbose: bool = True, paper_trading: bool = True, portfolio_simulator=None, 
+                 retry_config: Dict[str, Any] = None):
         """
         Initialize the Autonomous Crypto Trading Crew.
         
@@ -143,10 +258,19 @@ class AutonomousCryptoTradingCrew:
             verbose: Whether to enable verbose output from agents and tasks
             paper_trading: If True, simulate trades without actual execution
             portfolio_simulator: Portfolio simulator instance for virtual trading (required if paper_trading=True)
+            retry_config: Configuration for retry logic (max_retries, base_delay, max_delay)
         """
         self.verbose = verbose
         self.paper_trading = paper_trading
         self.tool_manager = AutonomousToolManager.get_instance()
+        
+        # Set up retry handler
+        retry_defaults = {"max_retries": 3, "base_delay": 1.0, "max_delay": 60.0}
+        if retry_config:
+            retry_defaults.update(retry_config)
+        self.retry_handler = CrewRetryHandler(**retry_defaults)
+        logger.info(f"Retry handler initialized: max_retries={retry_defaults['max_retries']}, "
+                   f"base_delay={retry_defaults['base_delay']}, max_delay={retry_defaults['max_delay']}")
         
         # Set up portfolio simulator if provided
         if paper_trading and portfolio_simulator is not None:
@@ -474,3 +598,68 @@ class AutonomousCryptoTradingCrew:
             base_inputs.update(additional_params)
         
         return base_inputs
+    
+    def kickoff_with_retry(self, inputs: Dict[str, Any] = None) -> Any:
+        """
+        Execute crew kickoff with enhanced retry logic and error handling
+        
+        Args:
+            inputs: Input parameters for the crew execution
+            
+        Returns:
+            Crew execution results
+        """
+        if inputs is None:
+            inputs = self.get_autonomous_inputs()
+        
+        # Validate inputs
+        self.validate_inputs(inputs)
+        
+        def _execute_crew():
+            """Internal crew execution function"""
+            crew_instance = self.crew()
+            return crew_instance.kickoff(inputs=inputs)
+        
+        # Execute with retry logic
+        return self.retry_handler.execute_with_retry(
+            operation=_execute_crew,
+            operation_name="Crew Kickoff"
+        )
+    
+    def kickoff_single_task_with_retry(self, task_name: str, inputs: Dict[str, Any] = None) -> Any:
+        """
+        Execute a single task with retry logic for testing/debugging
+        
+        Args:
+            task_name: Name of the task method to execute
+            inputs: Input parameters
+            
+        Returns:
+            Task execution results
+        """
+        if inputs is None:
+            inputs = self.get_autonomous_inputs()
+            
+        def _execute_single_task():
+            """Internal single task execution"""
+            if hasattr(self, task_name):
+                task_method = getattr(self, task_name)
+                task_instance = task_method()
+                agent = task_instance.agent
+                
+                # Create a minimal crew with just this task
+                single_task_crew = Crew(
+                    agents=[agent],
+                    tasks=[task_instance],
+                    process=Process.sequential,
+                    verbose=self.verbose
+                )
+                
+                return single_task_crew.kickoff(inputs=inputs)
+            else:
+                raise ValueError(f"Task method '{task_name}' not found")
+        
+        return self.retry_handler.execute_with_retry(
+            operation=_execute_single_task,
+            operation_name=f"Single Task: {task_name}"
+        )

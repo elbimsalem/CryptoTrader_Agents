@@ -21,7 +21,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def run_real_trading():
+def run_real_trading(max_retries=5):
     """
     Run the autonomous trading crew in REAL TRADING MODE
     
@@ -44,15 +44,18 @@ def run_real_trading():
         return 1
     
     try:
-        # Create autonomous crew with real trading enabled
+        # Create autonomous crew with real trading enabled and enhanced retry logic
+        retry_config = {"max_retries": max_retries, "base_delay": 2.0, "max_delay": 120.0}
         real_crew = AutonomousCryptoTradingCrew(
             verbose=True,
             paper_trading=False,  # ⚠️ REAL TRADING MODE
-            portfolio_simulator=None  # No simulator needed for real trading
+            portfolio_simulator=None,  # No simulator needed for real trading
+            retry_config=retry_config
         )
         
         print("🚀 Real Trading Crew initialized")
         print("⚠️  All trades will be REAL and use REAL money!")
+        print(f"🔄 Enhanced retry logic: max_retries={max_retries}, base_delay=2.0s, max_delay=120.0s")
         
         # Create inputs
         inputs = {
@@ -69,9 +72,8 @@ def run_real_trading():
         print("🚀 Starting real trading execution...")
         print("⚠️  Monitor your account and stop if needed!")
         
-        # Run the crew
-        crew = real_crew.crew()
-        result = crew.kickoff(inputs=inputs)
+        # Run the crew with retry logic
+        result = real_crew.kickoff_with_retry(inputs=inputs)
         
         print("✅ Real trading cycle completed!")
         print(f"📄 Result: {type(result)}")

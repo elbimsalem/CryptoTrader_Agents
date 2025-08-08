@@ -98,7 +98,7 @@ class TestModeCryptoTradingCrew():
     and comprehensive reporting capabilities
     """
     
-    def __init__(self, initial_balance: float = 10000.0, verbose: bool = False):
+    def __init__(self, initial_balance: float = 10000.0, verbose: bool = False, retry_config: Dict[str, Any] = None):
         self.verbose = verbose
         
         # Initialize portfolio simulator
@@ -111,7 +111,8 @@ class TestModeCryptoTradingCrew():
         self.base_crew = AutonomousCryptoTradingCrew(
             verbose=verbose, 
             paper_trading=True, 
-            portfolio_simulator=self.portfolio_simulator
+            portfolio_simulator=self.portfolio_simulator,
+            retry_config=retry_config  # Pass retry config to base crew
         )
         
         # Load test mode configurations
@@ -353,6 +354,27 @@ class TestModeCryptoTradingCrew():
             'current_balance': self.portfolio_simulator.current_balance,
             'positions_count': len(self.portfolio_simulator.positions)
         }
+    
+    def kickoff_with_retry(self, inputs: Dict[str, Any] = None) -> Any:
+        """
+        Execute test mode crew with enhanced retry logic
+        
+        Args:
+            inputs: Input parameters for the crew execution
+            
+        Returns:
+            Crew execution results
+        """
+        if inputs is None:
+            inputs = {
+                'current_datetime': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                'filename_datetime': datetime.now().strftime('%Y%m%d_%H%M%S'),
+                'initial_balance': self.portfolio_simulator.initial_balance,
+                'test_mode': True
+            }
+        
+        # Use the base crew's retry logic
+        return self.base_crew.kickoff_with_retry(inputs=inputs)
 
 def run_test_mode_crew(initial_balance: float = 10000.0, verbose: bool = False) -> Any:
     """

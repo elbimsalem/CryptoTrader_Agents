@@ -21,13 +21,14 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def run_extended_test(initial_balance=10000.0, verbose=True):
+def run_extended_test(initial_balance=10000.0, verbose=True, max_retries=3):
     """
     Run Extended Test Mode with comprehensive reporting
     
     Args:
         initial_balance: Starting virtual portfolio balance
         verbose: Enable detailed logging
+        max_retries: Maximum retry attempts for LLM connection failures
     """
     print("🚀 Extended Test Mode - Autonomous Trading Simulation")
     print("=" * 60)
@@ -43,15 +44,18 @@ def run_extended_test(initial_balance=10000.0, verbose=True):
     try:
         print(f"💰 Initializing with ${initial_balance:,.2f} virtual balance...")
         
-        # Create extended test mode crew
+        # Create extended test mode crew with retry configuration
+        retry_config = {"max_retries": max_retries, "base_delay": 1.0, "max_delay": 60.0}
         test_crew = TestModeCryptoTradingCrew(
             initial_balance=initial_balance,
-            verbose=verbose
+            verbose=verbose,
+            retry_config=retry_config
         )
         
         print(f"✅ Extended test crew initialized")
         print(f"📊 Agents: {len(test_crew.crew().agents)}")
         print(f"📋 Tasks: {len(test_crew.crew().tasks)}")
+        print(f"🔄 Retry configuration: max_retries={max_retries}, base_delay=1.0s, max_delay=60.0s")
         
         # Show portfolio status
         portfolio_summary = test_crew.get_portfolio_summary({})
@@ -71,9 +75,8 @@ def run_extended_test(initial_balance=10000.0, verbose=True):
         print("⏱️  This may take several minutes to complete all agent tasks")
         print()
         
-        # Run the extended test
-        crew = test_crew.crew()
-        result = crew.kickoff(inputs=inputs)
+        # Run the extended test with retry logic
+        result = test_crew.kickoff_with_retry(inputs=inputs)
         
         print("\n✅ Extended test execution completed!")
         
@@ -122,8 +125,14 @@ def main():
     verbose_input = input("Enable verbose logging? (y/N): ").strip().lower()
     verbose = verbose_input in ['y', 'yes']
     
+    try:
+        retries_input = input("Max retry attempts for connection failures (default 3): ").strip()
+        max_retries = int(retries_input) if retries_input else 3
+    except ValueError:
+        max_retries = 3
+    
     print()
-    return run_extended_test(initial_balance=initial_balance, verbose=verbose)
+    return run_extended_test(initial_balance=initial_balance, verbose=verbose, max_retries=max_retries)
 
 if __name__ == "__main__":
     exit(main())
