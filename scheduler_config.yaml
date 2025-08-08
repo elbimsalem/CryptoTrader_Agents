@@ -1,0 +1,81 @@
+# Smart Scheduler Configuration for Autonomous Crypto Trading
+# Optimize token usage while maintaining effective trading analysis
+
+# =============================================================================
+# ANALYSIS INTERVALS (in minutes)
+# =============================================================================
+intervals:
+  monitor_only: 5           # Price monitoring (0 tokens)
+  quick_scan: 60           # Light analysis (~2K tokens) 
+  medium_analysis: 240     # Moderate analysis (~8K tokens) - 4 hours
+  full_analysis: 720       # Complete analysis (~25K tokens) - 12 hours
+
+# =============================================================================
+# MARKET CONDITION THRESHOLDS
+# =============================================================================
+thresholds:
+  high_volatility: 0.05    # 5% - triggers urgent analysis
+  volume_surge: 0.30       # 30% volume increase
+  significant_price_change: 0.03  # 3% price change
+
+# =============================================================================
+# TRADING HOURS OPTIMIZATION  
+# =============================================================================
+trading_hours:
+  active_start: 6          # 6 AM UTC (active trading starts)
+  active_end: 22           # 10 PM UTC (active trading ends)
+  weekend_scale: 1.5       # Scale intervals by 1.5x on weekends
+
+# =============================================================================
+# TOKEN USAGE LIMITS
+# =============================================================================
+token_limits:
+  conservative: 50000      # ~$5-10/day estimated
+  moderate: 100000         # ~$10-20/day estimated  
+  aggressive: 200000       # ~$20-40/day estimated
+  
+# =============================================================================
+# SMART TRIGGERS
+# =============================================================================
+smart_triggers:
+  # Force full analysis when:
+  major_move_threshold: 0.10     # 10% price move in any top asset
+  volume_spike_multiplier: 3.0   # 3x normal volume
+  correlation_breakdown: 0.3     # Major correlation changes
+  
+  # Emergency monitoring (more frequent checks):
+  emergency_volatility: 0.15     # 15% volatility triggers 1-min checks
+  flash_crash_detection: -0.20   # -20% move triggers immediate analysis
+
+# =============================================================================
+# PORTFOLIO REBALANCING TRIGGERS  
+# =============================================================================
+rebalancing:
+  deviation_threshold: 0.05      # 5% allocation deviation
+  minimum_interval: 240          # At least 4 hours between rebalances
+  force_rebalance_hours: 24      # Force rebalance every 24 hours
+
+# =============================================================================
+# EXAMPLE SCHEDULES
+# =============================================================================
+
+# CONSERVATIVE SCHEDULE (50K tokens/day):
+# - Monitor: Every 5 minutes (0 tokens)
+# - Quick: Every 2 hours (~12 scans = 24K tokens)  
+# - Medium: Every 8 hours (~3 analyses = 24K tokens)
+# - Full: Once per day (~1 analysis = 25K tokens)
+# Total: ~73K tokens (with market-driven adjustments)
+
+# MODERATE SCHEDULE (100K tokens/day):
+# - Monitor: Every 5 minutes (0 tokens)
+# - Quick: Every 1 hour (~24 scans = 48K tokens)
+# - Medium: Every 4 hours (~6 analyses = 48K tokens)  
+# - Full: Every 12 hours (~2 analyses = 50K tokens)
+# Total: ~146K tokens (scaled back during low activity)
+
+# AGGRESSIVE SCHEDULE (200K tokens/day):
+# - Monitor: Every 2 minutes (0 tokens)
+# - Quick: Every 30 minutes (~48 scans = 96K tokens)
+# - Medium: Every 2 hours (~12 analyses = 96K tokens)
+# - Full: Every 6 hours (~4 analyses = 100K tokens)  
+# Total: ~292K tokens (heavy optimization needed)

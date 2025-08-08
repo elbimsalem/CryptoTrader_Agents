@@ -1,0 +1,186 @@
+# src/crypto_trader/config/tasks.yaml
+fetch_binance_klines_task:
+  agent: binance_data_analyst
+  description: >
+    As of {current_datetime}, using the "Binance Market Data Tool (via RapidAPI)", fetch historical Kline/Candlestick data.
+    Action: 'get_kline_data'.
+    Parameters:
+      'symbol': '{target_symbol}'
+      'interval': '{kline_interval}'
+      'limit': {kline_limit}
+    
+    CRITICAL REQUIREMENTS:
+    - Verify the response contains complete data for all requested candles
+    - Check that timestamps are sequential and within expected ranges
+    - Validate that OHLCV values are numeric and reasonable (no zero volumes, prices > 0)
+    - If any data appears incomplete or suspicious, clearly state this in your output
+    - Include the actual number of candles received vs requested
+    - Note the time range of the data (oldest to newest timestamp)
+  expected_output: >
+    A JSON string containing the requested Kline/Candlestick data for {target_symbol}, with explicit validation summary including: data completeness status, timestamp range covered, any anomalies detected, and confirmation of data freshness relative to {current_datetime}.
+
+fetch_binance_price_ticker_task:
+  agent: binance_data_analyst
+  description: >
+    As of {current_datetime}, using the "Binance Market Data Tool (via RapidAPI)", fetch the current price ticker.
+    Action: 'get_symbol_price_ticker'.
+    Parameters:
+      'symbol': '{target_symbol}'
+    
+    CRITICAL REQUIREMENTS:
+    - Verify the response contains all expected price fields (price, bid, ask if available)
+    - Check that the price data timestamp is recent (within last 5 minutes of {current_datetime})
+    - Validate that price values are positive and within reasonable market ranges
+    - If data appears stale or missing critical fields, clearly indicate this
+    - Compare with 24hr stats if available to ensure consistency
+  expected_output: >
+    A JSON string containing the current price ticker for {target_symbol} as of {current_datetime}, with validation summary including: data freshness status, completeness check, and any data quality concerns identified.
+
+fetch_binance_24hr_stats_task:
+  agent: binance_data_analyst
+  description: >
+    As of {current_datetime}, using the "Binance Market Data Tool (via RapidAPI)", fetch the 24-hour price change statistics.
+    Action: 'get_24hr_ticker'.
+    Parameters:
+      'symbol': '{target_symbol}'
+    
+    CRITICAL REQUIREMENTS:
+    - Verify all key 24hr metrics are present (open, high, low, close, volume, change%)
+    - Validate that high >= low >= 0 and volume >= 0
+    - Check that percentage changes are mathematically consistent with open/close prices
+    - Ensure the data timestamp indicates it covers a full 24-hour period
+    - Flag any unusual values (extreme volatility, zero volume, etc.)
+  expected_output: >
+    A JSON string containing the 24-hour price change statistics for {target_symbol} as of {current_datetime}, with data integrity verification including: mathematical consistency checks, completeness status, and flagged anomalies if any.
+
+research_news_and_sentiment_task:
+  agent: news_and_sentiment_researcher
+  description: >
+    Conduct focused online research for '{target_symbol}' using a prioritized approach.
+    
+    SEARCH STRATEGY (in order of priority):
+    1. Start with top-tier sources: CoinDesk, Cointelegraph, The Block
+    2. Check specialized sources: Decrypt, CryptoSlate, Bitcoin Magazine only if relevant to {target_symbol}
+    3. Monitor social sentiment: Twitter/X search for ${target_symbol}, relevant Reddit discussions
+    4. Verify with data platforms: CoinGecko, CoinMarketCap for official announcements
+    
+    QUALITY CONTROL REQUIREMENTS:
+    - Prioritize articles from last 24-48 hours only
+    - For each source, evaluate credibility (established publication vs blog post)
+    - Avoid duplicate stories across multiple sources
+    - Distinguish between news (factual events) and opinion/analysis
+    - For social media, focus on verified accounts and high-engagement posts
+    - If scraping fails for any source, note this limitation clearly
+    
+    SENTIMENT ASSESSMENT:
+    - Provide specific evidence for sentiment claims (quotes, metrics, volume of discussion)
+    - Distinguish between short-term sentiment vs fundamental outlook
+    - Note any conflicting viewpoints and their relative prominence
+    - Quantify confidence in sentiment assessment (High/Medium/Low) based on source quality and consensus
+  expected_output: >
+    A structured research summary for {target_symbol} (current as of {current_datetime}) including:
+    - Recent news items (last 24-48hrs) with source credibility ratings
+    - Market sentiment assessment with confidence levels and supporting evidence
+    - Key social media trends with engagement metrics where available
+    - Any upcoming catalysts or risk factors identified
+    - Data quality disclaimer listing any sources that were inaccessible
+    - Overall research confidence score based on source diversity and quality
+    Format as organized markdown with clear source attributions.
+
+analyze_crypto_data_task:
+  agent: crypto_analyst
+  description: >
+    Perform comprehensive analysis of provided market data and research for '{target_symbol}', with emphasis on data quality validation and confidence assessment.
+    
+    ANALYSIS REQUIREMENTS:
+    1. DATA QUALITY ASSESSMENT:
+       - Review all input data for completeness and consistency
+       - Note any missing or questionable data points
+       - Validate that timestamps align across different data sources
+       - Flag any anomalies in price/volume data
+    
+    2. QUANTITATIVE ANALYSIS:
+       - Analyze price trends from kline data with specific timeframe context
+       - Calculate key support/resistance levels using multiple methods
+       - Assess current volatility relative to historical norms
+       - Evaluate volume patterns and their significance
+    
+    3. QUALITATIVE INTEGRATION:
+       - Correlate price movements with identified news events (timing analysis)
+       - Assess whether sentiment aligns with technical indicators
+       - Identify any disconnects between fundamentals and price action
+    
+    4. CONFIDENCE SCORING:
+       - Assign confidence levels (High/Medium/Low) to each major conclusion
+       - Base confidence on data quality, sample size, and consistency across sources
+       - Highlight areas where more data would improve analysis reliability
+  context:
+    - fetch_binance_klines_task
+    - fetch_binance_price_ticker_task  
+    - fetch_binance_24hr_stats_task
+    - research_news_and_sentiment_task
+  expected_output: >
+    A comprehensive analysis report in Markdown format for {target_symbol} as of {current_datetime}, structured as:
+    1. Executive Summary with overall outlook and confidence level
+    2. Data Quality Assessment (any limitations or concerns)
+    3. Technical Analysis (trends, levels, indicators with statistical context)
+    4. Fundamental Analysis (news impact, sentiment correlation)
+    5. Key Risk Factors and Uncertainties
+    6. Conclusion with confidence-weighted recommendations
+    All major conclusions must include confidence levels and supporting rationale.
+
+develop_trading_plan_task:
+  agent: trading_plan_strategist
+  description: >
+    Develop a detailed, risk-aware trading plan for '{target_symbol}' based on the comprehensive analysis.
+    
+    MANDATORY PLAN COMPONENTS:
+    1. STRATEGY RATIONALE:
+       - Clear reasoning based on analysis findings
+       - Confidence level in the underlying analysis
+       - Market conditions assumed for plan validity
+    
+    2. POSITION SIZING:
+       - Recommend position size as percentage of trading account (1-5% suggested range)
+       - Adjust recommendation based on volatility and confidence level
+       - Consider liquidity constraints for the target symbol
+    
+    3. ENTRY CRITERIA:
+       - Specific price levels or technical conditions
+       - Time-based conditions if relevant
+       - Market context requirements (volume, volatility)
+    
+    4. EXIT STRATEGY:
+       - Multiple take-profit levels with percentage allocations
+       - Stop-loss placement with technical justification
+       - Time-based exit conditions if applicable
+    
+    5. RISK ASSESSMENT:
+       - Maximum loss per trade (dollar amount and percentage)
+       - Key risks that could invalidate the plan
+       - Market scenarios that require plan adjustment
+    
+    6. EXECUTION NOTES:
+       - Optimal timing considerations
+       - Order type recommendations
+       - Market impact considerations
+    
+    VALIDATION REQUIREMENTS:
+    - Ensure risk/reward ratio is favorable (minimum 1:1.5)
+    - Verify all price levels are realistic given current market conditions
+    - Confirm plan is executable within stated timeframe
+    - Include plan validity period and conditions for reassessment
+  context:
+    - analyze_crypto_data_task
+  expected_output: >
+    A detailed trading plan document in Markdown format for {target_symbol}, executable around {current_datetime}, containing:
+    1. Strategy Overview (rationale, confidence level, market assumptions)
+    2. Position Sizing Recommendation (with account percentage and rationale)
+    3. Entry Strategy (specific conditions and levels)
+    4. Exit Strategy (take-profit levels, stop-loss, time limits)
+    5. Risk Management (maximum loss, invalidation conditions)
+    6. Execution Guidelines (timing, order types, monitoring requirements)
+    7. Plan Validity (timeframe, reassessment triggers)
+    8. Disclaimer (plan limitations and assumptions)
+    This is the final crew output with clear actionability and risk boundaries.
+  output_file: output/trading_plan_{target_symbol}_{filename_datetime}.md
